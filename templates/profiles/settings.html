@@ -8,13 +8,16 @@
 
     <form method="post" class="form">
       {% csrf_token %}
-      <label>身高（cm）</label>
-      {{ form.height_cm }}
+      <label for="height">身高 (cm):</label>
+      <input type="number" name="height" id="height" required><br>
 
-      <label>体重（kg）</label>
-      {{ form.weight_kg }}
+      <label for="weight">体重 (kg):</label>
+      <input type="number" name="weight" id="weight" required><br>
 
-      <button class="btn" type="submit">保存</button>
+      <label for="age">年龄:</label>
+      <input type="number" name="age" id="age"><br>
+
+       <button type="submit">保存</button>
     </form>
   </section>
 {% endblock %}

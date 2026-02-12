@@ -8,13 +8,11 @@
   </section>
 
   <section class="glass card">
-    <div class="card-title">健康摘要（本地手动输入）</div>
+    <div class="card-title">健康摘要</div>
     {% if has_basic %}
-      <div class="card-subtitle">
-        身高：{{ profile.height_cm }} cm · 体重：{{ profile.weight_kg }} kg
-      </div>
+      
     {% else %}
-      <div class="card-subtitle">请先去 Settings 填写身高/体重</div>
+      <div class="card-subtitle">请先去 Settings 填写健康基本信息</div>
     {% endif %}
   </section>
 {% endblock %}
