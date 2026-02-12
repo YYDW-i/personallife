@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}登录 · LocalLife{% endblock %}
+
+{% block content %}
+  <section class="glass card">
+    <div class="card-title">登录</div>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn" type="submit">登录</button>
+    </form>
+  </section>
+{% endblock %}

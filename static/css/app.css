@@ -1,0 +1,118 @@
+:root{
+  --bg1:#071022;
+  --bg2:#0a1530;
+  --glass: rgba(255,255,255,.08);
+  --stroke: rgba(255,255,255,.14);
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.72);
+  --muter: rgba(255,255,255,.55);
+}
+
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(900px 500px at 70% 20%, rgba(120,90,255,.25), transparent 60%),
+    radial-gradient(900px 500px at 20% 10%, rgba(90,170,255,.18), transparent 60%),
+    linear-gradient(180deg, var(--bg2), var(--bg1));
+  min-height: 100vh;
+}
+
+.wrap{
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 26px 18px 60px;
+}
+
+.glass{
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.25);
+}
+
+.header{
+  padding: 18px 22px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.brand{ font-size: 28px; font-weight: 750; letter-spacing: .2px; }
+.slogan{ color: var(--muted); margin-top: 4px; }
+
+.badge{
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tabs{
+  padding: 10px;
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  margin-bottom: 18px;
+}
+
+.tab{
+  padding: 10px 14px;
+  border-radius: 14px;
+  text-decoration:none;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.tab:hover{ color: var(--text); border-color: rgba(255,255,255,.12); }
+
+.tab.active{
+  color: var(--text);
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.18);
+}
+
+.tab.subtle{ color: var(--muter); }
+.spacer{ flex:1; }
+
+.card{
+  padding: 18px 22px;
+  margin-bottom: 14px;
+}
+
+.card-title{ font-size: 26px; font-weight: 760; margin-bottom: 6px; }
+.card-subtitle{ color: var(--muted); font-size: 16px; }
+
+.form{
+  margin-top: 14px;
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.form input{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.15);
+  color: var(--text);
+  outline: none;
+}
+
+.btn{
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.12);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover{ background: rgba(255,255,255,.16); }

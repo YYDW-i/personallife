@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}LocalLife{% endblock %}</title>
+  {%load static%}
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <div class="wrap">
+    <header class="glass header">
+      <div>
+        <div class="brand">LocalLife</div>
+        <div class="slogan">本地优先 · 隐私友好 · 精致生活控制台</div>
+      </div>
+      <div class="badge">Stage A · 骨架可运行</div>
+    </header>
+
+    <nav class="glass tabs">
+      {% url 'core:dashboard' as dash_url %}
+      {% url 'tasks:index' as tasks_url %}
+      {% url 'habits:index' as habits_url %}
+      {% url 'planner:index' as cal_url %}
+      {% url 'notes:index' as notes_url %}
+      {% url 'analytics_app:index' as ana_url %}
+      {% url 'profiles:settings' as set_url %}
+
+      <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
+      <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
+      <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
+      <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
+      <a class="tab {% if request.path|slice:":7" == "/notes/" %}active{% endif %}" href="{{ notes_url }}">Notes</a>
+      <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
+      <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
+
+      <div class="spacer"></div>
+
+      {% if user.is_authenticated %}
+        <a class="tab subtle" href="{% url 'login' %}">退出</a>
+      {% else %}
+        <a class="tab subtle" href="{% url 'login' %}">登录</a>
+      {% endif %}
+    </nav>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

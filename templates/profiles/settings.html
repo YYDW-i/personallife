@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Settings · LocalLife{% endblock %}
+
+{% block content %}
+  <section class="glass card">
+    <div class="card-title">Settings</div>
+    <div class="card-subtitle">填写后 Dashboard 会显示健康摘要</div>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+      <label>身高（cm）</label>
+      {{ form.height_cm }}
+
+      <label>体重（kg）</label>
+      {{ form.weight_kg }}
+
+      <button class="btn" type="submit">保存</button>
+    </form>
+  </section>
+{% endblock %}
