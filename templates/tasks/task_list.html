@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Tasks · LocalLife{% endblock %}
+{% load static %}
+{% block content %}
+  <section class="glass card">
+    <div class="card-title">Tasks</div>
+    <div class="card-subtitle">支持：绝对时刻 / 时间段 + 到点提醒 + 完成/删除双操作</div>
+
+    <div class="row">
+      <a class="btn" href="{% url 'tasks:create' %}">+ 新建任务</a>
+      <button class="btn subtle" id="btn-enable-notify" type="button">开启系统通知</button>
+      <span class="muted" id="notify-hint"></span>
+    </div>
+
+    <div class="table">
+      {% for t in tasks %}
+        <div class="task-item {% if t.status == 'DONE' %}done{% endif %}">
+          <div class="task-main">
+            <div class="task-title">{{ t.title }}</div>
+            {% if t.description %}
+              <div class="task-desc">{{ t.description }}</div>
+            {% endif %}
+
+            <div class="task-meta">
+              <span class="pill">{{ t.get_status_display }}</span>
+
+              {% if t.schedule_kind == "AT" and t.due_at %}
+                <span class="pill">到期：{{ t.due_at|date:"Y-m-d H:i" }}</span>
+              {% elif t.schedule_kind == "WINDOW" and t.window_start and t.window_end %}
+                <span class="pill">时间段：{{ t.window_start|date:"Y-m-d H:i" }} ~ {{ t.window_end|date:"H:i" }}</span>
+              {% else %}
+                <span class="pill">未设置时间</span>
+              {% endif %}
+
+              {% if t.remind_enabled and t.remind_at %}
+                <span class="pill">提醒：{{ t.remind_at|date:"Y-m-d H:i" }}</span>
+              {% endif %}
+
+              {% if t.completed_at %}
+                <span class="pill">完成于：{{ t.completed_at|date:"Y-m-d H:i" }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="task-actions">
+            <a class="btn subtle" href="{% url 'tasks:update' t.id %}">编辑</a>
+
+            {% if t.status != "DONE" %}
+              <form method="post" action="{% url 'tasks:complete' t.id %}">
+                {% csrf_token %}
+                <button class="btn success" type="submit">完成</button>
+              </form>
+            {% endif %}
+
+            <a class="btn danger" href="{% url 'tasks:delete' t.id %}">删除</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="muted">还没有任务，点“新建任务”开始吧。</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- toast 容器 -->
+  <div id="toast-root"></div>
+
+  <script>
+    window.REMINDER_ENDPOINT = "{% url 'tasks:reminders_api' %}";
+  </script>
+  <script src="{% static 'js/reminders.js' %}"></script>
+{% endblock %}

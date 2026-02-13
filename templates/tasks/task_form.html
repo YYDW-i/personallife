@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}编辑任务 · LocalLife{% endblock %}
+
+{% block content %}
+  <section class="glass card">
+    <div class="card-title">{% if object %}编辑任务{% else %}新建任务{% endif %}</div>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+
+      {{ form.title.label_tag }}
+      {{ form.title }}
+
+      {{ form.description.label_tag }}
+      {{ form.description }}
+
+      <hr class="sep"/>
+
+      {{ form.schedule_kind.label_tag }}
+      {{ form.schedule_kind }}
+
+      <div id="block-at">
+        {{ form.due_at.label_tag }}
+        {{ form.due_at }}
+      </div>
+
+      <div id="block-window">
+        {{ form.window_start.label_tag }}
+        {{ form.window_start }}
+
+        {{ form.duration_minutes.label_tag }}
+        {{ form.duration_minutes }}
+
+        {{ form.window_end.label_tag }}
+        {{ form.window_end }}
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="row">
+        <div>
+          {{ form.remind_enabled }}
+          <label for="{{ form.remind_enabled.id_for_label }}">开启提醒</label>
+        </div>
+      </div>
+
+      {{ form.remind_lead_minutes.label_tag }}
+      {{ form.remind_lead_minutes }}
+      <div class="muted">例如：填 10 表示“提前 10 分钟提醒”。</div>
+
+      {% if form.errors %}
+        <div class="errors">
+          {{ form.errors }}
+        </div>
+      {% endif %}
+
+      <div class="row">
+        <button class="btn" type="submit">保存</button>
+        <a class="btn subtle" href="{% url 'tasks:index' %}">返回</a>
+      </div>
+    </form>
+  </section>
+
+  <script>
+    function toggleSchedule() {
+      const kind = document.getElementById("id_schedule_kind").value;
+      document.getElementById("block-at").style.display = (kind === "AT") ? "block" : "none";
+      document.getElementById("block-window").style.display = (kind === "WINDOW") ? "block" : "none";
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      toggleSchedule();
+      document.getElementById("id_schedule_kind").addEventListener("change", toggleSchedule);
+    });
+  </script>
+{% endblock %}

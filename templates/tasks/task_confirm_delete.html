@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}删除任务 · LocalLife{% endblock %}
+
+{% block content %}
+  <section class="glass card">
+    <div class="card-title">确认删除</div>
+    <div class="card-subtitle">你确定要删除任务：<b>{{ object.title }}</b> 吗？（删除 ≠ 完成）</div>
+
+    <form method="post" class="row" style="margin-top:14px;">
+      {% csrf_token %}
+      <button class="btn danger" type="submit">确认删除</button>
+      <a class="btn subtle" href="{% url 'tasks:index' %}">取消</a>
+    </form>
+  </section>
+{% endblock %}

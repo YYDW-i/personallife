@@ -123,3 +123,78 @@ body{
   cursor: pointer;
 }
 .btn:hover{ background: rgba(255,255,255,.16); }
+
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+.muted{ color: rgba(255,255,255,.65); font-size: 14px; }
+
+.btn.success{ background: rgba(80,200,140,.14); }
+.btn.success:hover{ background: rgba(80,200,140,.20); }
+
+.btn.danger{ background: rgba(255,90,120,.14); }
+.btn.danger:hover{ background: rgba(255,90,120,.20); }
+
+.table{ margin-top: 14px; display:flex; flex-direction:column; gap:10px; }
+
+.task-item{
+  display:flex; gap:12px; justify-content:space-between; align-items:flex-start;
+  padding: 14px 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: rgba(0,0,0,.10);
+}
+.task-item.done{ opacity: .70; }
+
+.task-title{ font-weight: 750; font-size: 18px; }
+.task-desc{ color: rgba(255,255,255,.70); margin-top: 4px; white-space: pre-wrap; }
+
+.task-meta{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
+.pill{
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  color: rgba(255,255,255,.78);
+  font-size: 13px;
+  background: rgba(255,255,255,.06);
+}
+
+.task-actions{ display:flex; gap:10px; align-items:center; }
+
+.sep{ border: none; border-top: 1px solid rgba(255,255,255,.10); margin: 14px 0; }
+
+.errors{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,120,120,.25);
+  background: rgba(255,120,120,.10);
+  color: rgba(255,255,255,.90);
+}
+
+#toast-root{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index: 9999;
+}
+
+.toast{
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all .22s ease;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255,255,255,.92);
+  max-width: 360px;
+}
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
