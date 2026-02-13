@@ -9,15 +9,15 @@
     <form method="post" class="form">
       {% csrf_token %}
       <label for="height">身高 (cm):</label>
-      <input type="number" name="height" id="height" required><br>
+      <input type="number" name="height_cm" id="height" required><br>
 
       <label for="weight">体重 (kg):</label>
-      <input type="number" name="weight" id="weight" required><br>
+      <input type="number" name="weight_kg" id="weight" required><br>
 
       <label for="age">年龄:</label>
-      <input type="number" name="age" id="age"><br>
+      <input type="number" name="age_year" id="age" required><br>
 
-       <button type="submit">保存</button>
+      <button type="submit">保存</button>
     </form>
   </section>
 {% endblock %}
