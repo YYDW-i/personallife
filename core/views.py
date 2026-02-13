@@ -51,6 +51,13 @@ def dashboard(request):
                 else:
                     ai_summary = result
                     ai_status = ""
+                profile.ai_summary = ai_summary
+                profile.ai_status = ai_status
+                profile.ai_signature = sig
+                profile.ai_updated_at = timezone.now()
+                profile.save(update_fields=["ai_summary","ai_status","ai_signature","ai_updated_at"])
+                profile.refresh_from_db()
+                
             except Exception as e:
                 ai_summary = f"AI 生成失败，请稍后再试: {str(e)}"
 
