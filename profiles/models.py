@@ -8,5 +8,10 @@ class HealthProfile(models.Model):
     age_year=models.IntegerField(null=True,blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    ai_summary = models.TextField(blank=True, default="")
+    ai_status = models.CharField(max_length=64, blank=True, default="")
+    ai_signature = models.CharField(max_length=64, blank=True, default="")  # 用于判断“数据是否变过”
+    ai_updated_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"HealthProfile({self.user})"

@@ -13,11 +13,7 @@ def settings_view(request):
     profile, _ = HealthProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        print("POST keys:", list(request.POST.keys()))
-        print("POST age_year:", request.POST.get("age_year"))
         form = HealthProfileForm(request.POST, instance=profile)
-        print("is_valid:", form.is_valid())
-        print("errors:", form.errors)
         if form.is_valid():
             form.save()
             return redirect("core:dashboard")

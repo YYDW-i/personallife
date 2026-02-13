@@ -19,7 +19,8 @@ def dashboard(request):
             "请根据这些数据生成一份详细的健康分析报告，"
             "包括 BMI 指标解释、是否存在超重或偏瘦风险、"
             "建议的生活习惯改善措施等。"
-            "最后给出一个总结性的健康状态结论"
+            "注意：输出的时候不要用markdown格式，不要使用星号或者其他语法特殊符号，否则输出到html里会出现很多乱码"
+            "最后一行给出一个总结性的健康状态打分，并且解释与满分的差距，记住，打分和总结内容都要在最后一行，其中，分数用大号字加粗"
         )
 
         try:
@@ -38,12 +39,6 @@ def dashboard(request):
                 ai_status = ""
         except Exception as e:
             ai_summary = f"AI 生成失败，请稍后再试: {str(e)}"
-    print(">>> core.dashboard called")
-    print(">>> profile:", profile)
-    if profile:
-        print(">>> height_cm:", profile.height_cm, "weight_kg:", profile.weight_kg, "age_year:", profile.age_year)
-    print(">>> has_basic:", has_basic)
-
 
     return render(request,"core/dashboard.html",
                 {"has_basic": has_basic,
