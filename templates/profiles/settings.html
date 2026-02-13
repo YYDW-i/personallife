@@ -9,14 +9,14 @@
     <form method="post" class="form">
       {% csrf_token %}
       <label for="height">身高 (cm):</label>
-      <input type="number" name="height_cm" id="height" required><br>
+      <input type="number" name="height_cm" id="height" value="{{ form.height_cm.value|default_if_none:'' }}" placeholder="例如180" required><br>
 
       <label for="weight">体重 (kg):</label>
-      <input type="number" name="weight_kg" id="weight" required><br>
+      <input type="number" name="weight_kg" id="weight" value="{{ form.weight_kg.value|default_if_none:'' }}" placeholder="例如：50" required><br>
 
       <label for="age">年龄:</label>
-      <input type="number" name="age_year" id="age" required><br>
-
+      <input type="number" name="age_year" id="age" value="{{ form.age_year.value|default_if_none:'' }}" placeholder="例如：20" required><br>
+      
       <button type="submit">保存</button>
     </form>
   </section>

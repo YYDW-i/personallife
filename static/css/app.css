@@ -7,8 +7,20 @@
   --muted: rgba(255,255,255,.72);
   --muter: rgba(255,255,255,.55);
 }
+.container {
+  width: 90%; /* 占视口90%宽度 */
+  max-width: 1200px; /* 限制最大宽度 */
+  min-width: 320px; /* 限制最小宽度 */
+  margin: 0 auto; /* 水平居中 */
+  padding: 15px; /* 适当内边距 */
+}
 
-*{ box-sizing:border-box; }
+
+*{ 
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+ }
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;

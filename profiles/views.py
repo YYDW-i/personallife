@@ -15,7 +15,16 @@ def settings_view(request):
     if request.method == "POST":
         form = HealthProfileForm(request.POST, instance=profile)
         if form.is_valid():
-            form.save()
+            changed = set(form.changed_data)  # changed_data/has_changed 是 Django Forms API 的标准能力 :contentReference[oaicite:1]{index=1}
+            obj = form.save()
+
+            if {"height_cm", "weight_kg", "age_year"} & changed:
+                obj.ai_summary = ""
+                obj.ai_status = ""
+                obj.ai_signature = ""
+                obj.ai_updated_at = None
+                obj.save(update_fields=["ai_summary", "ai_status", "ai_signature", "ai_updated_at"])
+
             return redirect("core:dashboard")
     else:
         form = HealthProfileForm(instance=profile)
