@@ -71,5 +71,16 @@
       toggleSchedule();
       document.getElementById("id_schedule_kind").addEventListener("change", toggleSchedule);
     });
+    document.addEventListener("DOMContentLoaded", () => {
+      ["id_due_at", "id_window_start", "id_window_end"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("click", () => {
+          if (typeof el.showPicker === "function") {
+            el.showPicker();  // 主动弹出原生选择器
+          }
+        });
+      });
+    });
   </script>
 {% endblock %}
