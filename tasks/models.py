@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-
+from datetime import timedelta
 
 class Task(models.Model):
     class Status(models.TextChoices):
@@ -45,3 +45,18 @@ class Task(models.Model):
 
     def __str__(self):
         return f"Task({self.user_id}, {self.title}, {self.status})"
+    
+    def compute_remind_at(self):
+        if not self.remind_enabled:
+            return None
+
+        base = self.due_at or self.window_start
+        if not base:
+            return None
+
+        lead = self.remind_lead_minutes or 0
+        return base - timedelta(minutes=lead)
+
+    def save(self, *args, **kwargs):
+        self.remind_at = self.compute_remind_at()
+        super().save(*args, **kwargs)

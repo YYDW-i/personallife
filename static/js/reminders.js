@@ -35,7 +35,8 @@
         }
       });
     } catch (e) {
-      // 静默失败：不影响页面
+      console.error("reminder poll failed:", e);
+      toast("提醒轮询失败：请打开控制台查看错误");
     }
   }
 

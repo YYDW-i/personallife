@@ -6,9 +6,24 @@ from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.utils import timezone
-
+from datetime import timedelta
 from .models import Task
 from .forms import TaskForm
+
+def compute_remind_at(task: Task):
+    """
+    根据 due_at / window_start + lead_minutes 计算 remind_at
+    规则：开启提醒才算；优先 due_at，其次 window_start；没时间就 None
+    """
+    if not task.remind_enabled:
+        return None
+
+    base = task.due_at or task.window_start
+    if not base:
+        return None
+
+    lead = task.remind_lead_minutes or 0
+    return base - timedelta(minutes=lead)
 
 
 class TaskListView(LoginRequiredMixin, ListView):
@@ -32,10 +47,15 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.user = self.request.user
+
+        # ✅ 关键：计算并写入 remind_at
+        obj.remind_at = compute_remind_at(obj)
+
         # 如果重新设置了提醒时间，允许再次提醒
         obj.reminded_at = None
         obj.save()
         return redirect(self.success_url)
+
 
 
 class TaskUpdateView(LoginRequiredMixin, UpdateView):
@@ -50,7 +70,7 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         obj = form.save(commit=False)
         # 更新后如果提醒时间变化，也允许再次提醒
-        obj.reminded_at = None
+        obj.remind_at = compute_remind_at(obj)
         obj.save()
         return redirect(self.success_url)
 
