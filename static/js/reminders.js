@@ -51,9 +51,30 @@
       // 最近尝试失败过：把原因显示出来更直观
       setSoundBadge(`声音：未启用（${lastAudioError}）`, "bad");
     } else {
-      setSoundBadge("声音：未解锁（需点击）", "warn");
+      setSoundBadge("声音：未解锁（需点击空白处）", "warn");
     }
+    armSoundUnlockOnNextGesture();
+
   }
+
+  let armUnlockOnce = false;
+
+  function armSoundUnlockOnNextGesture() {
+    if (!soundEnabled || audioUnlocked || armUnlockOnce) return;
+    armUnlockOnce = true;
+
+    // 下一次任意点击/键盘触发就解锁一次
+    const handler = async () => {
+      document.removeEventListener("pointerdown", handler, true);
+      document.removeEventListener("keydown", handler, true);
+      armUnlockOnce = false;
+      await unlockAudio(); // ✅ 这里有用户手势，成功率最高
+    };
+
+    document.addEventListener("pointerdown", handler, true);
+    document.addEventListener("keydown", handler, true);
+  }
+
   async function unlockAudio() {
     lastAudioError = "";
     try {
