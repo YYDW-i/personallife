@@ -8,7 +8,25 @@
 
     <div class="row">
       <a class="btn" href="{% url 'tasks:create' %}">+ 新建任务</a>
-      <button class="btn subtle" id="btn-enable-notify" type="button">开启系统通知</button>
+      <button class="btn subtle" id="btn-notify-toggle" type="button">…</button>
+      <span class="pill" id="notify-badge">…</span>
+
+      <!-- 关闭/重置权限说明弹窗（关闭按钮仅指引用户去浏览器设置） -->
+      <dialog id="notify-help" class="glass card" style="max-width:520px;">
+        <div class="card-title">如何关闭系统通知权限</div>
+        <div class="muted" style="margin-top:8px; line-height:1.6;">
+          浏览器不允许网页代码直接撤销通知权限。你需要在浏览器的站点设置里修改：
+          <br><br>
+          <b>Chrome / Edge：</b><br>
+          1）点地址栏左侧“小锁/站点信息”<br>
+          2）找到 <b>通知（Notifications）</b><br>
+          3）改为 <b>阻止</b> 或 <b>询问（默认）</b><br>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="btn-help-close" type="button">知道了</button>
+        </div>
+      </dialog>
+
       <span class="muted" id="notify-hint"></span>
     </div>
 

@@ -79,29 +79,72 @@
   poll();
 
   // 绑定“开启系统通知”按钮（不要一上来就弹权限请求，会很烦）
-  const btn = document.getElementById("btn-enable-notify");
-  const hint = document.getElementById("notify-hint");
+  const btnToggle = document.getElementById("btn-notify-toggle");
+  const badge = document.getElementById("notify-badge");
 
-  function refreshHint() {
+  const dlg = document.getElementById("notify-help");
+  const btnHelpClose = document.getElementById("btn-help-close");
+  btnHelpClose?.addEventListener("click", () => dlg?.close());
+
+  function setBadge(text, kind) {
+    if (!badge) return;
+    badge.textContent = text;
+    // kind: ok / warn / bad / off
+    badge.dataset.kind = kind;
+  }
+
+  // 可选：给 badge 做颜色（不想改 CSS 也能先不做）
+  /*
+  在 app.css 里加：
+  #notify-badge[data-kind="ok"]{ background: rgba(80,200,140,.14); }
+  #notify-badge[data-kind="warn"]{ background: rgba(255,200,80,.14); }
+  #notify-badge[data-kind="bad"]{ background: rgba(255,90,120,.14); }
+  #notify-badge[data-kind="off"]{ background: rgba(255,255,255,.06); }
+  */
+
+  function renderNotifyUI() {
     if (!("Notification" in window)) {
-      hint && (hint.textContent = "（浏览器不支持系统通知）");
+      btnToggle && (btnToggle.textContent = "系统通知：不支持");
+      btnToggle && (btnToggle.disabled = true);
+      setBadge("通知：浏览器不支持", "off");
       return;
     }
-    hint && (hint.textContent = `（当前权限：${Notification.permission}）`);
-  }
-  function safeToast(msg) { try { toast(msg); } catch(e) {} }
 
-  btn && btn.addEventListener("click", async () => {
-  // 1) 通知权限
-    await unlockAudio();
-    if ("Notification" in window) {
-      const perm = await Notification.requestPermission();
-      refreshHint();
-      if (perm !== "granted") toast("系统通知未开启：仍会用页面内提示提醒你。");
+    const p = Notification.permission; // granted / denied / default
+    if (p === "granted") {
+      btnToggle && (btnToggle.textContent = "关闭系统通知");
+      btnToggle && (btnToggle.disabled = false);
+      setBadge("通知：已开启", "ok");
+    } else if (p === "denied") {
+      btnToggle && (btnToggle.textContent = "通知被阻止：去浏览器设置");
+      btnToggle && (btnToggle.disabled = false);
+      setBadge("通知：已阻止", "bad");
+    } else {
+      // default
+      btnToggle && (btnToggle.textContent = "开启系统通知");
+      btnToggle && (btnToggle.disabled = false);
+      setBadge("通知：未授权", "warn");
+    }
+  }
+
+  btnToggle?.addEventListener("click", async () => {
+    if (!("Notification" in window)) return;
+
+    const p = Notification.permission;
+    if (p === "default") {
+      const perm = await Notification.requestPermission(); // Promise -> granted/denied/default
+      renderNotifyUI();
+      if (perm !== "granted") {
+        // 你可以 toast 一下：没授权也会继续用页面内提醒
+        // toast("系统通知未开启：仍会用页面内提示提醒你。");
+      }
+      return;
     }
 
+    // granted 或 denied：无法用代码“撤销/重置”，只能指引用户去站点设置
+    dlg?.showModal();
   });
 
+  renderNotifyUI();
 
-  refreshHint();
 })();
