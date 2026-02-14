@@ -4,5 +4,7 @@ from . import views
 app_name = "planner"
 
 urlpatterns = [
-    path("", views.index, name="index"),
+    path("", views.calendar_month, name="index"),
+    path("<int:year>/<int:month>/", views.calendar_month, name="month"),
+    path("day/<int:year>/<int:month>/<int:day>/", views.calendar_day, name="day"),
 ]

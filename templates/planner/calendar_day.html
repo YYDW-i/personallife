@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ target }} · Calendar · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="cal-head">
+    <div>
+      <div class="card-title">{{ target }}</div>
+      <div class="card-subtitle">当天任务列表（从 Tasks 联动）</div>
+    </div>
+
+    <div class="cal-actions">
+      <a class="btn subtle" href="{% url 'planner:month' target.year target.month %}{% if show_done %}?show_done=1{% endif %}">← 返回月视图</a>
+      <a class="btn" href="{% url 'tasks:create' %}?schedule_kind=AT&due_at={{ target|date:"Y-m-d" }}T09:00">+ 新建当天任务</a>
+    </div>
+  </div>
+
+  <div class="day-list">
+    {% for t in tasks %}
+      <div class="day-item {% if t.status == 'DONE' %}done{% endif %}">
+        <div class="day-left">
+          <div class="task-title">{{ t.title }}</div>
+          <div class="task-meta">
+            <span class="pill">{{ t.get_status_display }}</span>
+            {% if t.schedule_kind == "AT" and t.due_at %}
+              <span class="pill">到期：{{ t.due_at|date:"H:i" }}</span>
+            {% elif t.schedule_kind == "WINDOW" and t.window_start and t.window_end %}
+              <span class="pill">时间段：{{ t.window_start|date:"H:i" }}~{{ t.window_end|date:"H:i" }}</span>
+            {% endif %}
+            {% if t.remind_enabled and t.remind_at %}
+              <span class="pill">提醒：{{ t.remind_at|date:"H:i" }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="day-actions">
+          <a class="btn subtle" href="{% url 'tasks:update' t.id %}">编辑</a>
+
+          {% if t.status != "DONE" %}
+          <form method="post" action="{% url 'tasks:complete' t.id %}">
+            {% csrf_token %}
+            <button class="btn success" type="submit">完成</button>
+          </form>
+          {% endif %}
+
+          <a class="btn danger" href="{% url 'tasks:delete' t.id %}">删除</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="muted">这一天没有任务。</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

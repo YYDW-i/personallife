@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Task
 from .forms import TaskForm
+from django.utils.dateparse import parse_datetime
 
 def compute_remind_at(task: Task):
     """
@@ -55,6 +56,22 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
         obj.reminded_at = None
         obj.save()
         return redirect(self.success_url)
+    def get_initial(self):
+        initial = super().get_initial()
+        kind = self.request.GET.get("schedule_kind")
+        due_at = self.request.GET.get("due_at")
+
+        if kind in (Task.ScheduleKind.AT, Task.ScheduleKind.WINDOW, Task.ScheduleKind.NONE):
+            initial["schedule_kind"] = kind
+
+        if due_at:
+            dt = parse_datetime(due_at)
+            if dt:
+                # parse_datetime 可能返回 naive；统一按当前时区处理
+                if timezone.is_naive(dt):
+                    dt = timezone.make_aware(dt, timezone.get_current_timezone())
+                initial["due_at"] = timezone.localtime(dt).strftime("%Y-%m-%dT%H:%M")
+        return initial
 
 
 

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Calendar · LocalLife{% endblock %}
+
+{% block content %}
+  <section class="glass card">
+    <div class="cal-head">
+      <div>
+        <div class="card-title">Calendar</div>
+        <div class="card-subtitle">{{ year }}-{{ month|stringformat:"02d" }} · Tasks 联动展示</div>
+      </div>
+
+      <div class="cal-actions">
+        <a class="btn subtle" href="{% url 'planner:month' prev_year prev_month %}{% if show_done %}?show_done=1{% endif %}">← 上月</a>
+        <a class="btn subtle" href="{% url 'planner:index' %}{% if show_done %}?show_done=1{% endif %}">回到本月</a>
+        <a class="btn subtle" href="{% url 'planner:month' next_year next_month %}{% if show_done %}?show_done=1{% endif %}">下月 →</a>
+
+        {% if show_done %}
+          <a class="btn" href="{% url 'planner:month' year month %}">隐藏已完成</a>
+        {% else %}
+          <a class="btn" href="{% url 'planner:month' year month %}?show_done=1">显示已完成</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="cal-grid">
+      <div class="cal-dow">一</div><div class="cal-dow">二</div><div class="cal-dow">三</div>
+      <div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div><div class="cal-dow">日</div>
+
+      {% for week in weeks %}
+        {% for cell in week %}
+          <div class="cal-cell {% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}">
+            <div class="cal-cell-top">
+              <a class="cal-day" href="{% url 'planner:day' cell.date.year cell.date.month cell.date.day %}{% if show_done %}?show_done=1{% endif %}">
+                {{ cell.day }}
+              </a>
+
+              <!-- 快捷新建：默认 AT，时间 09:00 -->
+              <a class="cal-add"
+                 href="{% url 'tasks:create' %}?schedule_kind=AT&due_at={{ cell.date_str }}T09:00">
+                +
+              </a>
+            </div>
+
+            <div class="cal-items">
+              {% for t in cell.tasks|slice:":3" %}
+                <a class="cal-item {% if t.status == 'DONE' %}done{% endif %}"
+                   href="{% url 'tasks:update' t.id %}">
+                  {% if t.schedule_kind == "AT" and t.due_at %}
+                    <span class="time">{{ t.due_at|date:"H:i" }}</span>
+                  {% elif t.schedule_kind == "WINDOW" and t.window_start %}
+                    <span class="time">{{ t.window_start|date:"H:i" }}</span>
+                  {% endif %}
+                  <span class="title">{{ t.title }}</span>
+                </a>
+              {% endfor %}
+
+              {% if cell.tasks|length > 3 %}
+                <div class="cal-more">+{{ cell.tasks|length|add:"-3" }} more</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    {% if floating_tasks %}
+      <div class="cal-floating">
+        <div class="muted">未设置时间的任务（不会出现在日历格子里）：</div>
+        <div class="floating-list">
+          {% for t in floating_tasks %}
+            <a class="pill" href="{% url 'tasks:update' t.id %}">{{ t.title }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
