@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Tasks · LocalLife{% endblock %}
-{% load static %}
+{% load static tz %}
 {% block content %}
   <section class="glass card">
     <div class="card-title">Tasks</div>
@@ -25,19 +25,19 @@
               <span class="pill">{{ t.get_status_display }}</span>
 
               {% if t.schedule_kind == "AT" and t.due_at %}
-                <span class="pill">到期：{{ t.due_at|date:"Y-m-d H:i" }}</span>
+                <span class="pill">到期：{{ t.due_at|localtime|date:"Y-m-d H:i" }}</span>
               {% elif t.schedule_kind == "WINDOW" and t.window_start and t.window_end %}
-                <span class="pill">时间段：{{ t.window_start|date:"Y-m-d H:i" }} ~ {{ t.window_end|date:"H:i" }}</span>
+                <span class="pill">时间段：{{ t.window_start|localtime|date:"Y-m-d H:i" }} ~ {{ t.window_end|localtime|date:"H:i" }}</span>
               {% else %}
                 <span class="pill">未设置时间</span>
               {% endif %}
 
               {% if t.remind_enabled and t.remind_at %}
-                <span class="pill">提醒：{{ t.remind_at|date:"Y-m-d H:i" }}</span>
+                <span class="pill">提醒：{{ t.remind_at|localtime|date:"Y-m-d H:i" }}</span>
               {% endif %}
 
               {% if t.completed_at %}
-                <span class="pill">完成于：{{ t.completed_at|date:"Y-m-d H:i" }}</span>
+                <span class="pill">完成于：{{ t.completed_at|localtime|date:"Y-m-d H:i" }}</span>
               {% endif %}
             </div>
           </div>
