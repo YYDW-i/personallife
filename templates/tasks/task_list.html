@@ -26,6 +26,24 @@
           <button class="btn" id="btn-help-close" type="button">知道了</button>
         </div>
       </dialog>
+      <button class="btn subtle" id="btn-sound-toggle" type="button">…</button>
+      <button class="btn subtle" id="btn-sound-test" type="button">测试声音</button>
+      <span class="pill" id="sound-badge">…</span>
+
+      <dialog id="sound-help" class="glass card" style="max-width:520px;">
+        <div class="card-title">如何开启/恢复网页声音</div>
+        <div class="muted" style="margin-top:8px; line-height:1.6;">
+          声音播放可能被浏览器策略拦截（需要用户点击解锁），或该站点被静音/禁止播放声音。<br><br>
+          <b>建议按顺序排查：</b><br>
+          1）先点一次「开启声音提醒」或「测试声音」（用于解锁）<br>
+          2）检查标签页是否被静音（右键标签页 → 取消静音）<br>
+          3）Chrome / Edge：点地址栏左侧“小锁/站点信息” → Site settings → <b>Sound</b> 设为 <b>Allow</b><br>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="btn-sound-help-close" type="button">知道了</button>
+        </div>
+      </dialog>
+
 
       <span class="muted" id="notify-hint"></span>
     </div>

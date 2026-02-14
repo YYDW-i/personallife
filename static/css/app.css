@@ -1,3 +1,4 @@
+
 :root{
   --bg1:#071022;
   --bg2:#0a1530;
@@ -32,6 +33,7 @@ body{
   margin: 0 auto; /* 水平居中 */
   padding: 15px; /* 内边距 */
 }
+
 
 .glass{
   background: var(--glass);
@@ -197,4 +199,3 @@ body{
   opacity: 1;
   transform: translateY(0);
 }
-

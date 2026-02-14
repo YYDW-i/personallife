@@ -18,9 +18,44 @@
   }
   const audio = new Audio("/static/sounds/remind.mp3");
   audio.preload = "auto";
+  let  = false;
+  const SOUND_KEY = "locallife_sound_enabled";
+  let soundEnabled = localStorage.getItem(SOUND_KEY) !== "0"; // 默认开启（你也可以默认关闭）
   let audioUnlocked = false;
+  let lastAudioError = ""; // 记录最近一次失败原因（NotAllowedError/NotSupportedError/...）
 
+  const btnSoundToggle = document.getElementById("btn-sound-toggle");
+  const btnSoundTest = document.getElementById("btn-sound-test");
+  const soundBadge = document.getElementById("sound-badge");
+  const soundDlg = document.getElementById("sound-help");
+
+  document.getElementById("btn-sound-help-close")?.addEventListener("click", () => soundDlg?.close());
+  function setSoundBadge(text, kind) {
+    if (!soundBadge) return;
+    soundBadge.textContent = text;
+    soundBadge.dataset.kind = kind; // ok/warn/bad/off
+  }
+
+  function renderSoundUI() {
+    if (!soundEnabled) {
+      btnSoundToggle && (btnSoundToggle.textContent = "开启声音提醒");
+      setSoundBadge("声音：已关闭（应用内）", "off");
+      return;
+    }
+
+    // soundEnabled = true
+    btnSoundToggle && (btnSoundToggle.textContent = "关闭声音提醒");
+    if (audioUnlocked) {
+      setSoundBadge("声音：已启用", "ok");
+    } else if (lastAudioError) {
+      // 最近尝试失败过：把原因显示出来更直观
+      setSoundBadge(`声音：未启用（${lastAudioError}）`, "bad");
+    } else {
+      setSoundBadge("声音：未解锁（需点击）", "warn");
+    }
+  }
   async function unlockAudio() {
+    lastAudioError = "";
     try {
       const oldVol = audio.volume;
       audio.volume = 0;        // 关键：不是 muted
@@ -32,15 +67,52 @@
       toast("✅ 系统通知和声音提醒已启用");
     } catch (e) {
       audioUnlocked = false;
+      lastAudioError = e?.name || "PlayBlocked";
       console.warn("unlockAudio failed:", e);
       toast("⚠️ 声音未启用：浏览器阻止播放。再点一次按钮试试");
+    }finally {
+      renderSoundUI();
     }
   }
+  // 绑定按钮：开启/关闭（应用内开关）
+  btnSoundToggle?.addEventListener("click", async () => {
+    if (soundEnabled) {
+      soundEnabled = false;
+      localStorage.setItem(SOUND_KEY, "0");
+      toast("🔕 已关闭声音提醒（应用内）");
+      renderSoundUI();
+    } else {
+      soundEnabled = true;
+      localStorage.setItem(SOUND_KEY, "1");
+      // 开启时顺便解锁一次（用户手势）
+      await unlockAudio();
+    }
+  });
 
+  // 测试按钮：用于“我现在就要听到声音”，同时也能解锁
+  btnSoundTest?.addEventListener("click", async () => {
+    if (!soundEnabled) {
+      soundEnabled = true;
+      localStorage.setItem(SOUND_KEY, "1");
+    }
+    await unlockAudio();
+    if (audioUnlocked) {
+      playSound();
+      toast("🔊 已播放测试音效");
+    } else {
+      soundDlg?.showModal();
+    }
+  });
   function playSound() {
+    if (!soundEnabled) return;
+    audio.currentTime = 0;
     const p = audio.play();
     if (p?.catch) {
-      p.catch(e => console.warn("playSound blocked:", e));
+      p.catch((e) => {
+        lastAudioError = e?.name || "PlayBlocked";
+        console.warn("playSound blocked:", e);
+        renderSoundUI();
+      });
     }
   }
 
@@ -59,12 +131,11 @@
           new Notification("LocalLife 提醒", { body: msg });
         }
 
-        if (audioUnlocked) {
+        if (soundEnabled &&audioUnlocked) {
           audio.currentTime = 0;
           playSound();
-        } else {
-          // 没解锁就提示用户：点一次按钮即可启用声音
-          toast("🔇 声音未启用：点“开启系统通知”以启用声音提醒");
+        } else if (soundEnabled && !audioUnlocked) {
+          toast("🔇 声音未解锁：点一下“测试声音/开启声音提醒”");
         }
       });
 
@@ -144,7 +215,7 @@
     // granted 或 denied：无法用代码“撤销/重置”，只能指引用户去站点设置
     dlg?.showModal();
   });
-
+  renderSoundUI();
   renderNotifyUI();
 
 })();
