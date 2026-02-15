@@ -15,12 +15,12 @@ def settings_view(request):
     profile, _ = HealthProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        old = (profile.height_cm, profile.weight_kg, profile.age_year)
+        old = (profile.height_cm, profile.weight_kg, profile.age_year,profile.gender)
         form = HealthProfileForm(request.POST, instance=profile)
         if form.is_valid():
               # changed_data/has_changed 是 Django Forms API 的标准能力 :contentReference[oaicite:1]{index=1}
             profile = form.save()  # 保存后的 profile
-            new = (profile.height_cm, profile.weight_kg, profile.age_year)
+            new = (profile.height_cm, profile.weight_kg, profile.age_year,profile.gender)
             
             if new != old:
                 profile.ai_summary = ""

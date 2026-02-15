@@ -17,6 +17,14 @@
       <label for="age">年龄:</label>
       <input type="number" name="age_year" id="age" value="{{ form.age_year.value|default_if_none:'' }}" placeholder="例如：20" required><br>
       
+      <label for="gender">性别:</label>
+      <select name="gender" id="gender" required>
+        <option value="" disabled {% if not form.gender.value %}selected{% endif %}>请选择</option>
+        <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>男</option>
+        <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>女</option>
+      </select><br>
+
+
       <button type="submit">保存</button>
     </form>
   </section>

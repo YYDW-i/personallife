@@ -7,6 +7,12 @@ class HealthProfile(models.Model):
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     age_year=models.IntegerField(null=True,blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+   
+    GENDER_CHOICES = [
+        ("M", "男"),
+        ("F", "女"),
+    ]
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES,blank=True) 
 
     ai_summary = models.TextField(blank=True, default="")
     ai_status = models.CharField(max_length=64, blank=True, default="")

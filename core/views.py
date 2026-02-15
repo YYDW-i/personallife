@@ -6,7 +6,7 @@ import hashlib
 from django.utils import timezone
 
 def make_signature(profile: HealthProfile) -> str:
-    raw = f"{profile.height_cm}|{profile.weight_kg}|{profile.age_year}"
+    raw = f"{profile.height_cm}|{profile.weight_kg}|{profile.age_year}|{profile.gender}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 @login_required
@@ -28,10 +28,11 @@ def dashboard(request):
             height = profile.height_cm
             weight = profile.weight_kg
             age = profile.age_year
+            gender=profile.gender
             prompt = (
-                f"用户身高：{height} cm，体重：{weight} kg，年龄：{age} 岁。"
-                "请根据这些数据生成一份详细的健康分析报告，"
-                "包括 BMI 指标解释、是否存在超重或偏瘦风险、"
+                f"用户身高：{height} cm，体重：{weight} kg，年龄：{age} 岁。性别（男：M女：F）：{gender}"
+                "请根据这些数据生成一份针对用户个性化详细的健康分析报告，"
+                "综合用户的这些信息，包括 BMI 指标解释、是否存在超重或偏瘦风险、"
                 "建议的生活习惯改善措施等。"
                 "注意：输出的时候不要用markdown格式，不要使用星号或者其他语法特殊符号，否则输出到html里会出现很多乱码"
                 "最后一行给出一个总结性的健康状态评价，记住，评价内容都要在最后一行"
