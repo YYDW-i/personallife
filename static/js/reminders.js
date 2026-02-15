@@ -85,7 +85,7 @@
       audio.currentTime = 0;
       audio.volume = oldVol;   // 恢复
       audioUnlocked = true;
-      toast("✅ 系统通知和声音提醒已启用");
+      toast("✅ 声音提醒已启用");
     } catch (e) {
       audioUnlocked = false;
       lastAudioError = e?.name || "PlayBlocked";

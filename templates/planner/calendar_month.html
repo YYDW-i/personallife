@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Calendar · LocalLife{% endblock %}
+{% load static tz%}
 
 {% block content %}
   <section class="glass card">
@@ -74,4 +75,10 @@
       </div>
     {% endif %}
   </section>
+  <div id="toast-root"></div>
+
+  <script>
+    window.REMINDER_ENDPOINT = "{% url 'tasks:reminders_api' %}";
+  </script>
+  <script src="{% static 'js/reminders.js' %}"></script>
 {% endblock %}
