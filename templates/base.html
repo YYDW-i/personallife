@@ -18,29 +18,37 @@
     </header>
 
     <nav class="glass tabs">
-      {% url 'core:dashboard' as dash_url %}
-      {% url 'tasks:index' as tasks_url %}
-      {% url 'habits:index' as habits_url %}
-      {% url 'planner:index' as cal_url %}
-      {% url 'notes:index' as notes_url %}
-      {% url 'analytics_app:index' as ana_url %}
-      {% url 'profiles:settings' as set_url %}
+      {% if user.is_authenticated %}
+        {% url 'core:dashboard' as dash_url %}
+        {% url 'tasks:index' as tasks_url %}
+        {% url 'habits:index' as habits_url %}
+        {% url 'planner:index' as cal_url %}
+        {% url 'notes:index' as notes_url %}
+        {% url 'analytics_app:index' as ana_url %}
+        {% url 'profiles:settings' as set_url %}
 
-      <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
-      <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
-      <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
-      <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
-      <a class="tab {% if request.path|slice:":7" == "/notes/" %}active{% endif %}" href="{{ notes_url }}">Notes</a>
-      <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
-      <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
+        <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
+        <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
+        <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
+        <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
+        <a class="tab {% if request.path|slice:":7" == "/notes/" %}active{% endif %}" href="{{ notes_url }}">Notes</a>
+        <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
+        <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
 
-      <div class="spacer"></div>
+        <div class="spacer"></div>
+      {% endif %}
 
       {% if user.is_authenticated %}
-        <a class="tab subtle" href="{% url 'login' %}">退出</a>
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="tab subtle" style="background:transparent;border:0;cursor:pointer;">
+            退出
+          </button>
+        </form>
       {% else %}
-        <a class="tab subtle" href="{% url 'login' %}">登录</a>
+        <a class="tab subtle">未登录</a>
       {% endif %}
+
     </nav>
 
     <main>

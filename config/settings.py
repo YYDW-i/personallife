@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "habits",
     "planner",
     "notes",
+    "accounts",
     "analytics_app",
     "profiles",
 ]
@@ -134,6 +135,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "core:dashboard"
-LOGOUT_REDIRECT_URL = "login"
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"

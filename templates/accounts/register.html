@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}注册 · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="card-title">注册</div>
+
+  {% if messages %}
+    <div style="margin:12px 0;">
+      {% for m in messages %}
+        <div class="hint {% if m.tags %}{{ m.tags }}{% endif %}">{{ m }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" class="form">
+    {% csrf_token %}
+
+    <div class="form-row">
+      <label>Username</label>
+      {{ form.username }}
+      {% if form.username.errors %}<div class="err">{{ form.username.errors }}</div>{% endif %}
+    </div>
+
+    {% if form.email %}
+    <div class="form-row">
+      <label>Email（可选）</label>
+      {{ form.email }}
+      {% if form.email.errors %}<div class="err">{{ form.email.errors }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="form-row">
+      <label>Password</label>
+      {{ form.password1 }}
+      {% if form.password1.errors %}<div class="err">{{ form.password1.errors }}</div>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <label>Confirm Password</label>
+      {{ form.password2 }}
+      {% if form.password2.errors %}<div class="err">{{ form.password2.errors }}</div>{% endif %}
+    </div>
+
+    <button class="btn primary" type="submit">注册并登录</button>
+
+    <div style="margin-top:12px;">
+      已有账号？
+      <a href="{% url 'login' %}">去登录</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

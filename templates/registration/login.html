@@ -4,6 +4,7 @@
 {% block content %}
   <section class="glass card">
     <div class="card-title">登录</div>
+    没有账号？<a href="{% url 'accounts:register' %}">注册</a>
 
     <form method="post" class="form">
       {% csrf_token %}
