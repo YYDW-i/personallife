@@ -15,6 +15,7 @@ from pathlib import Path
 import os
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
 ZAI_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/"  # 智谱 OpenAI 兼容 base_url :contentReference[oaicite:5]{index=5}
 ZAI_MODEL = "glm-4-flash-250414"  # 免费 Flash（也可换 glm-4.5-flash 等） :contentReference[oaicite:6]{index=6}
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     "accounts",
     "analytics_app",
     "profiles",
+    "django_apscheduler",
 ]
 
 MIDDLEWARE = [
