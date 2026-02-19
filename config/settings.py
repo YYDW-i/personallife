@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "accounts",
     "analytics_app",
     "profiles",
-    "django_apscheduler",
 ]
 
 MIDDLEWARE = [
