@@ -26,19 +26,17 @@
         {% url 'notes:index' as notes_url %}
         {% url 'analytics_app:index' as ana_url %}
         {% url 'profiles:settings' as set_url %}
-
-        <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
-        <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
-        <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
-        <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
-        <a class="tab {% if request.path|slice:":7" == "/notes/" %}active{% endif %}" href="{{ notes_url }}">Notes</a>
-        <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
-        <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
-
-        <div class="spacer"></div>
-      {% endif %}
-
-      {% if user.is_authenticated %}
+        <div class="tabs-left">
+          <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
+          <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
+          <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
+          <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
+          <a class="tab {% if request.path|slice:":7" == "/notes/" %}active{% endif %}" href="{{ notes_url }}">Notes</a>
+          <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
+          <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
+        </div>
+       
+        <div class="tabs-right">
         <span class="tab subtle">你好，{{ user.username }}</span>
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
           {% csrf_token %}
@@ -46,8 +44,11 @@
             退出
           </button>
         </form>
+      </div>
       {% else %}
-        <a class="tab subtle">未登录</a>
+        <div class="tabs-left">
+          <a class="tab subtle">未登录</a>
+        </div>
       {% endif %}
 
     </nav>

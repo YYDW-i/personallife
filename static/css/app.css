@@ -319,4 +319,25 @@ body{
 .day-item.done{ opacity: .70; }
 .day-actions{ display:flex; gap:10px; align-items:center; }
 
+.tabs{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
 
+
+
+.tabs-left{
+  display:flex;
+  flex-wrap: wrap;
+  column-gap: 12px;  /* 左右间距 */
+  row-gap: 16px;
+}
+
+.tabs-right{
+  margin-left: auto; /* 尽量靠右 */
+  display:flex;
+  column-gap: 12px;  /* 左右间距 */
+  row-gap: 16px;
+}
