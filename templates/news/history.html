@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}News · History · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="cal-head">
+    <div>
+      <div class="card-title">历史简报</div>
+      <div class="card-subtitle">按日期查看你当日生成的简报快照</div>
+    </div>
+    <div class="cal-actions">
+      <a class="btn subtle" href="{% url 'news:home' %}">回到今日</a>
+      <a class="btn" href="{% url 'news:preferences' %}">偏好设置</a>
+    </div>
+  </div>
+
+  <div class="history-list">
+    {% for d in digests %}
+      <a class="history-row" href="{% url 'news:digest_detail' d.date %}">
+        <div class="date">{{ d.date }}</div>
+        <div class="meta">生成于 {{ d.generated_at|date:"m-d H:i" }}</div>
+      </a>
+    {% empty %}
+      <div class="muted">还没有历史简报。</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -25,7 +25,7 @@ urlpatterns = [
     path("tasks/", include("tasks.urls")),
     path("habits/", include("habits.urls")),
     path("calendar/", include("planner.urls")),
-    path("notes/", include("notes.urls")),
+    path("news/", include("news.urls")),
     path("analytics/", include("analytics_app.urls")),
     path("settings/", include("profiles.urls")),
 ]

@@ -341,3 +341,68 @@ body{
   column-gap: 12px;  /* 左右间距 */
   row-gap: 16px;
 }
+
+/* Django CheckboxSelectMultiple */
+.news-pref ul, .news-pref div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.news-pref label { cursor: pointer; }
+
+.news-item{
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.10);
+}
+.news-item.is-read{ opacity: .78; }
+.news-title a{ color: rgba(255,255,255,.92); text-decoration: none; font-weight: 750; }
+.news-meta{ margin-top: 6px; color: rgba(255,255,255,.70); font-size: 13px; }
+.news-summary{ margin-top: 8px; color: rgba(255,255,255,.84); line-height: 1.5; }
+
+.news-actions{ margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap; }
+.news-actions .btn.active{
+  border-color: rgba(120,160,255,.35);
+  background: rgba(120,160,255,.12);
+}
+
+.news-group{ margin-top: 16px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.10); }
+.news-group-title{ font-weight: 800; color: rgba(255,255,255,.88); margin: 6px 0 10px; }
+
+.history-list{ margin-top: 14px; display:flex; flex-direction:column; gap:10px; }
+.history-row{
+  display:flex; justify-content:space-between; gap:12px; align-items:center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.10);
+  text-decoration:none;
+  color: rgba(255,255,255,.90);
+}
+.history-row:hover{ background: rgba(255,255,255,.06); }
+.history-row .meta{ color: rgba(255,255,255,.65); font-size: 13px; }
+
+.news-pref .form-grid{
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+}
+.news-pref .form-row{ display:flex; flex-direction:column; gap:8px; }
+.news-pref .form-row.span-2{ grid-column: span 2; }
+.news-pref .label{ font-weight: 750; color: rgba(255,255,255,.90); }
+.news-pref .help{ font-size: 13px; }
+.news-pref input[type="text"], .news-pref select, .news-pref textarea, .news-pref input[type="time"]{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+}
+.news-pref textarea{ resize: vertical; min-height: 80px; }
+.news-pref .choices ul{ list-style:none; padding-left:0; margin:0; display:flex; flex-wrap:wrap; gap:10px 14px; }
+.news-pref .choices label{ cursor:pointer; color: rgba(255,255,255,.85); }
+.news-pref .inline{ display:flex; gap:10px; align-items:center; }
+.pill.tiny{ padding:2px 8px; font-size: 12px; border-radius: 999px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); }

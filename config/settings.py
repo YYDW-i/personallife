@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "tasks",
     "habits",
     "planner",
-    "notes",
+    "news",
     "accounts",
     "analytics_app",
     "profiles",

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ item.title|truncatechars:40 }} · News · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="cal-head">
+    <div>
+      <div class="card-title">{{ item.title }}</div>
+      <div class="card-subtitle">
+        {% if item.source %}{{ item.source.name }} · {% endif %}
+        {{ item.published_at|date:"Y-m-d H:i" }}
+        {% if item.item_type == "PAPER" %} · Paper{% else %} · News{% endif %}
+      </div>
+    </div>
+
+    <div class="cal-actions">
+      <a class="btn subtle" href="{% url 'news:home' %}">回到今日</a>
+      <a class="btn subtle" href="{{ item.url }}" target="_blank" rel="noreferrer">打开原文</a>
+    </div>
+  </div>
+
+  <div class="item-meta">
+    {% if item.item_type == "PAPER" %}
+      {% if item.authors and item.authors|length %}
+        <div><span class="muted">作者：</span>{{ item.authors|join:", " }}</div>
+      {% endif %}
+      {% if item.venue %}<div><span class="muted">期刊/平台：</span>{{ item.venue }}</div>{% endif %}
+      {% if item.year %}<div><span class="muted">年份：</span>{{ item.year }}</div>{% endif %}
+      {% if item.doi %}<div><span class="muted">DOI：</span>{{ item.doi }}</div>{% endif %}
+    {% else %}
+      {% if item.language %}<div><span class="muted">语言：</span>{{ item.language }}</div>{% endif %}
+      {% if item.region %}<div><span class="muted">地区：</span>{{ item.region }}</div>{% endif %}
+    {% endif %}
+  </div>
+
+  {% if item.summary %}
+    <div class="item-summary">
+      {{ item.summary|linebreaksbr }}
+    </div>
+  {% else %}
+    <div class="muted">暂无摘要。</div>
+  {% endif %}
+
+  <div class="news-actions" style="margin-top:14px;">
+    <button
+      class="btn subtle js-toggle {% if state.is_read %}active{% endif %}"
+      data-news-toggle="1"
+      data-url="{% url 'news:toggle_item_state' item.id %}"
+      data-field="is_read"
+      data-on-text="已读 ✓"
+      data-off-text="标记已读">
+      {% if state.is_read %}已读 ✓{% else %}标记已读{% endif %}
+    </button>
+
+    <button
+      class="btn subtle js-toggle {% if state.is_favorite %}active{% endif %}"
+      data-news-toggle="1"
+      data-url="{% url 'news:toggle_item_state' item.id %}"
+      data-field="is_favorite"
+      data-on-text="已收藏 ★"
+      data-off-text="收藏">
+      {% if state.is_favorite %}已收藏 ★{% else %}收藏{% endif %}
+    </button>
+
+    <button
+      class="btn subtle js-toggle {% if state.is_later %}active{% endif %}"
+      data-news-toggle="1"
+      data-url="{% url 'news:toggle_item_state' item.id %}"
+      data-field="is_later"
+      data-on-text="稍后读 ⏳"
+      data-off-text="稍后读">
+      {% if state.is_later %}稍后读 ⏳{% else %}稍后读{% endif %}
+    </button>
+
+    <button
+      class="btn danger js-toggle {% if state.is_blocked %}active{% endif %}"
+      data-news-toggle="1"
+      data-url="{% url 'news:toggle_item_state' item.id %}"
+      data-field="is_blocked"
+      data-on-text="已屏蔽 🚫"
+      data-off-text="屏蔽">
+      {% if state.is_blocked %}已屏蔽 🚫{% else %}屏蔽{% endif %}
+    </button>
+  </div>
+</section>
+
+<script src="{% static 'news/news.js' %}"></script>
+{% endblock %}
