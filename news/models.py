@@ -15,6 +15,16 @@ class Topic(models.Model):
 
 
 class NewsSource(models.Model):
+    class SourceType(models.TextChoices):
+        RSS = "RSS", "RSS/Atom"
+        API = "API", "Official API"
+
+    # 关键：把 type 加回来，给默认值，避免以后再插入失败
+    type = models.CharField(
+        max_length=8,
+        choices=SourceType.choices,
+        default=SourceType.RSS,
+    )
     name = models.CharField(max_length=120)
     rss_url = models.URLField(unique=True)
     language = models.CharField(max_length=10, default="zh")   # zh / en / ...
