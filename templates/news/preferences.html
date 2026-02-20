@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}News Preferences · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="cal-head">
+    <div>
+      <div class="card-title">News · 偏好设置</div>
+      <div class="card-subtitle">选择主题 / 地区 / 语言 / 关键词</div>
+    </div>
+    <div class="cal-actions">
+      <a class="btn subtle" href="{% url 'news:index' %}">返回简报</a>
+    </div>
+  </div>
+
+  <form method="post" style="margin-top:14px; display:flex; flex-direction:column; gap:14px;">
+    {% csrf_token %}
+
+    <div class="glass" style="padding:14px; border-radius:16px;">
+      {{ form.enabled }} <label for="{{ form.enabled.id_for_label }}">启用新闻管家</label>
+    </div>
+
+    <div class="glass" style="padding:14px; border-radius:16px; display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+      <div>
+        <div class="muted" style="margin-bottom:6px;">语言</div>
+        {{ form.language }}
+      </div>
+      <div>
+        <div class="muted" style="margin-bottom:6px;">地区</div>
+        {{ form.region }}
+      </div>
+      <div>
+        <div class="muted" style="margin-bottom:6px;">每日条数</div>
+        {{ form.max_items }}
+      </div>
+    </div>
+
+    <div class="glass" style="padding:14px; border-radius:16px;">
+      <div class="muted" style="margin-bottom:6px;">关键词（逗号分隔）</div>
+      {{ form.keywords }}
+    </div>
+
+    <div class="glass" style="padding:14px; border-radius:16px;">
+      <div class="muted" style="margin-bottom:8px;">新闻主题</div>
+      {{ form.topics }}
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn" type="submit">保存</button>
+      <a class="btn subtle" href="{% url 'news:index' %}">取消</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

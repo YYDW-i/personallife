@@ -139,3 +139,14 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+
+# news 简报默认条数
+NEWS_DEFAULT_MAX_ITEMS = 8
+
+# 摘要生成后端： "fallback"（不调用大模型） 或 "callable"（调用你自己的函数）
+NEWS_SUMMARY_BACKEND = "fallback"
+
+# 当 NEWS_SUMMARY_BACKEND="callable" 时，用这个指向你项目里的函数
+# 例如你已有 profiles.zhipu_client，可写成 "profiles.zhipu_client.get_news_brief"
+NEWS_SUMMARY_CALLABLE = "profiles.zhipu_client.get_news_brief"
