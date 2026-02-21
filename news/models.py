@@ -44,6 +44,15 @@ class NewsItem(models.Model):
     link = models.URLField(max_length=1000)
     published_at = models.DateTimeField(null=True, blank=True)
 
+    # 设置默认值，避免 NULL 约束错误
+    summary = models.TextField(blank=True, default="")  # 设置空字符串作为默认值
+
+    item_type = models.CharField(
+        max_length=8,
+        choices=NewsSource.SourceType.choices,
+        default=NewsSource.SourceType.RSS,
+    )
+
     rss_summary = models.TextField(blank=True, default="")
     content_text = models.TextField(blank=True, default="")
 
@@ -66,7 +75,7 @@ class NewsItem(models.Model):
 class UserNewsPreference(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="news_pref")
     enabled = models.BooleanField(default=True)
-
+    include_keywords = models.CharField(max_length=255, default='')  # 设置默认值
     topics = models.ManyToManyField(Topic, blank=True)
     language = models.CharField(max_length=10, default="zh")
     region = models.CharField(max_length=10, blank=True, default="")

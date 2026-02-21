@@ -47,7 +47,7 @@ def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
 
         published_at = _parse_dt(entry)
         summary = (entry.get("summary") or entry.get("description") or "").strip()
-
+        item_type = getattr(source, "type", "RSS")
         obj, created = NewsItem.objects.get_or_create(
             source=source,
             guid=guid,
@@ -56,6 +56,7 @@ def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
                 "link": link[:1000],
                 "published_at": published_at,
                 "rss_summary": summary,
+                "item_type": item_type,
             },
         )
         if created:
