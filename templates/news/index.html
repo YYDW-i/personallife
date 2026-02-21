@@ -10,7 +10,10 @@
     </div>
     <div class="cal-actions">
       <a class="btn subtle" href="{% url 'news:preferences' %}">偏好设置</a>
-      <a class="btn" href="{% url 'news:refresh_today' %}">刷新今日简报</a>
+      <form method="POST" action="{% url 'news:refresh_today' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">刷新今日简报</button>
+      </form>
     </div>
   </div>
 

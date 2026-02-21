@@ -11,6 +11,7 @@ from news.services.brief import build_brief_for_user
 def index(request):
     date = timezone.localdate()
     brief = DailyBrief.objects.filter(user=request.user, date=date).prefetch_related("entries").first()
+    print(f"brief: {brief}")
     return render(request, "news/index.html", {"brief": brief, "date": date})
 
 
@@ -29,6 +30,7 @@ def preferences(request):
 
 @login_required
 def refresh_today(request):
+    if request.method == "POST":
     # 手动刷新：立即为当前用户生成一次今日简报
-    build_brief_for_user(request.user, date=timezone.localdate())
+        build_brief_for_user(request.user, date=timezone.localdate())
     return redirect("news:index")

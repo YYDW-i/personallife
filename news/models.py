@@ -28,7 +28,7 @@ class NewsSource(models.Model):
     name = models.CharField(max_length=120)
     rss_url = models.URLField(unique=True)
     language = models.CharField(max_length=10, default="zh")   # zh / en / ...
-    region = models.CharField(max_length=10, blank=True, default="")  # CN / US / ...
+    region = models.CharField(max_length=10, blank=True, default="CN")  # CN / US / ...
     topics = models.ManyToManyField(Topic, blank=True, related_name="sources")
     is_active = models.BooleanField(default=True)
     weight = models.FloatField(default=1.0)
@@ -76,7 +76,7 @@ class UserNewsPreference(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="news_pref")
     enabled = models.BooleanField(default=True)
     include_keywords = models.CharField(max_length=255, default='')  # 设置默认值
-    topics = models.ManyToManyField(Topic, blank=True)
+    topics = models.ManyToManyField(Topic, blank=True,default="")
     language = models.CharField(max_length=10, default="zh")
     region = models.CharField(max_length=10, blank=True, default="")
 
