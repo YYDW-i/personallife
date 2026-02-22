@@ -25,10 +25,10 @@ class NewsSource(models.Model):
         choices=SourceType.choices,
         default=SourceType.RSS,
     )
-    name = models.CharField(max_length=120)
+    name = models.CharField(max_length=1200)
     rss_url = models.URLField(unique=True)
-    language = models.CharField(max_length=10, default="zh")   # zh / en / ...
-    region = models.CharField(max_length=10, blank=True, default="CN")  # CN / US / ...
+    language = models.CharField(max_length=100, default="zh")   # zh / en / ...
+    region = models.CharField(max_length=100, blank=True, default="CN")  # CN / US / ...
     topics = models.ManyToManyField(Topic, blank=True, related_name="sources")
     is_active = models.BooleanField(default=True)
     weight = models.FloatField(default=1.0)

@@ -15,6 +15,8 @@ class NewsPreferenceForm(forms.ModelForm):
         fields = ["enabled", "language", "region", "keywords", "max_items", "topics"]
         widgets = {
             "keywords": forms.TextInput(attrs={"placeholder": "逗号分隔：AI, 芯片, 体育…"}),
+            "language": forms.TextInput(attrs={"placeholder": "中文：zh 英文：en"}),
+            "region": forms.TextInput(attrs={"placeholder": "中国:CN 外国：INTER"}),
         }
         labels = {
             "enabled": "启用新闻管家",
