@@ -13,18 +13,20 @@ TOPICS = [
 ]
 
 SOURCES = [
-    ("新华网-时政", "http://www.xinhuanet.com/politics/news_politics.xml", "zh", "CN", ["politics"]),
-    ("新华网-国际", "http://www.xinhuanet.com/world/news_world.xml", "zh", "CN", ["world"]),
-    ("新华网-财经", "http://www.xinhuanet.com/finance/news_finance.xml", "zh", "CN", ["finance"]),
-    ("新华网-科技", "http://www.xinhuanet.com/tech/news_tech.xml", "zh", "CN", ["tech"]),
-    ("新华网-体育", "http://www.xinhuanet.com/sports/news_sports.xml", "zh", "CN", ["sports"]),
-    ("新华网-娱乐", "http://www.xinhuanet.com/ent/news_ent.xml", "zh", "CN", ["entertainment"]),
+    ("中新网-时政", "https://www.chinanews.com.cn/rss/china.xml", "zh", "CN", ["politics"]),
+    ("中新网-国际", "https://www.chinanews.com.cn/rss/world.xml", "zh", "CN", ["world"]),
+    ("中新网-财经", "https://www.chinanews.com.cn/rss/finance.xml", "zh", "CN", ["finance"]),
+    ("中新网-科技", "https://www.chinanews.com.cn/rss/society.xml", "zh", "CN", ["tech"]),
+    ("中新网-体育", "https://www.chinanews.com.cn/rss/sports.xml", "zh", "CN", ["sports"]),
+    ("中新网-娱乐", "https://www.chinanews.com.cn/rss/culture.xml", "zh", "CN", ["entertainment"]),
 
     ("BBC-Technology", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/technology/rss.xml", "en", "INTER", ["tech"]),
     ("BBC-Business", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/business/rss.xml", "en", "INTER", ["finance"]),
     ("BBC-Politics", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/uk_politics/rss.xml", "en", "INTER", ["politics"]),
     ("BBC-World", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/world/rss.xml", "en", "INTER", ["world"]),
-    ("BBC-Entertainment", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/entertainment/rss.xml", "en", "INTER", ["ecology"]),
+    ("BBC-Entertainment", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/entertainment/rss.xml", "en", "INTER", ["entertainment"]),
+    ("BBC-Sport", "https://feeds.bbci.co.uk/sport/rss.xml", "en", "INTER", ["sports"]),
+
 
 ]
 
