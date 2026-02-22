@@ -54,5 +54,8 @@ class Command(BaseCommand):
                 },
             )
             src.topics.set([topic_map[s] for s in topic_slugs if s in topic_map])
-
+        
+        current_urls = [src[1] for src in SOURCES]
+        # 将数据库中不在此列表中的源设为非活跃
+        NewsSource.objects.exclude(rss_url__in=current_urls).update(is_active=False)
         self.stdout.write(self.style.SUCCESS("OK: topics & sources seeded."))
