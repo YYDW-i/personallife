@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "core",
     "tasks",
-    "habits",
+    "math",
     "planner",
     "news",
     "accounts",

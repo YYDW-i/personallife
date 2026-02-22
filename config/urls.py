@@ -23,7 +23,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("", include("core.urls")),
     path("tasks/", include("tasks.urls")),
-    path("habits/", include("habits.urls")),
+    path("math/", include("math.urls")),
     path("calendar/", include("planner.urls")),
     path("news/", include("news.urls")),
     path("analytics/", include("analytics_app.urls")),
