@@ -10,8 +10,11 @@ from news.services.brief import build_brief_for_user
 @login_required
 def index(request):
     date = timezone.localdate()
-    brief = DailyBrief.objects.filter(user=request.user, date=date).prefetch_related("entries").first()
-    print(f"brief: {brief}")
+
+    pref, _ = UserNewsPreference.objects.get_or_create(user=request.user)
+    lang = pref.language or 'zh'
+
+    brief = DailyBrief.objects.filter(user=request.user, date=date,language=lang).prefetch_related("entries").first()
     return render(request, "news/index.html", {"brief": brief, "date": date})
 
 
