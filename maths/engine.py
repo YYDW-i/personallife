@@ -12,7 +12,7 @@ ALLOWED = {
     "pi": sp.pi, "E": sp.E,
     "sin": sp.sin, "cos": sp.cos, "tan": sp.tan,
     "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,
-    "log": sp.log, "ln": sp.log, "exp": sp.exp,
+    "log": lambda x, base=10: sp.log(x, base), "ln": sp.log, "exp": sp.exp,
     "sqrt": sp.sqrt, "Abs": sp.Abs,
 }
 
