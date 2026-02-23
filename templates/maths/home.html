@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Maths · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="card-title">Math Lab</div>
+  <div class="card-subtitle">像 MATLAB 一样做计算、作图、可视化（无需写代码）</div>
+
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;">
+    <div class="glass" style="padding:14px; border-radius:16px; flex:1; min-width:280px;">
+      <div style="font-weight:700; margin-bottom:8px;">表达式计算</div>
+      <input id="expr" class="input" placeholder="例：2*sin(pi/4)+sqrt(2)" />
+      <button class="btn" style="margin-top:10px;" onclick="doEval()">计算</button>
+      <div id="eval_out" class="muted" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="glass" style="padding:14px; border-radius:16px; flex:1; min-width:280px;">
+      <div style="font-weight:700; margin-bottom:8px;">函数作图</div>
+      <input id="func" class="input" placeholder="例：sin(x) + x/3" />
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <input id="xmin" class="input" style="width:120px;" placeholder="-5" />
+        <input id="xmax" class="input" style="width:120px;" placeholder="5" />
+      </div>
+      <button class="btn" style="margin-top:10px;" onclick="doPlot()">画图</button>
+      <div id="plot_out" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+async function doEval(){
+  const expr = document.getElementById("expr").value;
+  const r = await fetch("{% url 'maths:api_eval' %}", {
+    method:"POST",
+    headers: {"Content-Type":"application/json","X-CSRFToken": csrftoken},
+    body: JSON.stringify({expr})
+  });
+  const data = await r.json();
+  // ...
+}
+
+async function doPlot(){
+  const func = document.getElementById("func").value;
+  const x_min = parseFloat(document.getElementById("xmin").value || -5);
+  const x_max = parseFloat(document.getElementById("xmax").value || 5);
+
+  const r = await fetch("{% url 'maths:api_plot' %}", {
+    method:"POST",
+    headers: {"Content-Type":"application/json","X-CSRFToken": csrftoken},
+    body: JSON.stringify({func, x_min, x_max})
+  });
+  const data = await r.json();
+  // ...
+}
+</script>
+{% endblock %}

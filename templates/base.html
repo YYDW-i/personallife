@@ -21,7 +21,7 @@
       {% if user.is_authenticated %}
         {% url 'core:dashboard' as dash_url %}
         {% url 'tasks:index' as tasks_url %}
-        {% url 'habits:index' as habits_url %}
+        {% url 'maths:home' as maths_url %}
         {% url 'planner:index' as cal_url %}
         {% url 'news:index' as news_url %}
         {% url 'analytics_app:index' as ana_url %}
@@ -29,7 +29,7 @@
         <div class="tabs-left">
           <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
           <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
-          <a class="tab {% if request.path|slice:":8" == "/habits/" %}active{% endif %}" href="{{ habits_url }}">Habits</a>
+          <a class="tab {% if request.path|slice:":8" == "/maths/" %}active{% endif %}" href="{{ maths_url }}">Maths</a>
           <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
           <a class="tab {% if request.path|slice:":7" == "/news/" %}active{% endif %}" href="{{ news_url }}">News</a>
           <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
