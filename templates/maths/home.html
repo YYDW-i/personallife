@@ -16,6 +16,7 @@
         <option value="integrate">积分</option>
         <option value="solve">解方程</option>
         <option value="plot">作图</option>
+        <option value="plot3d">3D 作图</option>
       </select>
 
       <input id="mainInput" class="input" style="flex:1; min-width:260px;"
@@ -64,6 +65,16 @@
       <span class="muted">点数：</span>
       <input id="npts" class="input" style="width:120px;" value="400" />
     </div>
+    <div id="plot3dArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">x：</span>
+      <input id="x3min" class="input" style="width:110px;" value="-5" />
+      <input id="x3max" class="input" style="width:110px;" value="5" />
+      <span class="muted">y：</span>
+      <input id="y3min" class="input" style="width:110px;" value="-5" />
+      <input id="y3max" class="input" style="width:110px;" value="5" />
+      <span class="muted">网格 n：</span>
+      <input id="n3" class="input" style="width:110px;" value="80" />
+    </div>
   </div>
 
   <!-- 数学键盘（同上一版，略微精简也行） -->
@@ -84,6 +95,7 @@
       <button type="button" class="btn subtle" onclick="ins('5')">5</button>
       <button type="button" class="btn subtle" onclick="ins('6')">6</button>
       <button type="button" class="btn subtle" onclick="ins('x')">x</button>
+      <button type="button" class="btn subtle" onclick="ins('y')">y</button>
       <button type="button" class="btn subtle" onclick="ins('pi')">π</button>
       <button type="button" class="btn subtle" onclick="ins('/')">÷</button>
       <button type="button" class="btn subtle" onclick="ins('^')">^</button>
@@ -192,6 +204,7 @@ function updatePanels(){
   document.getElementById("intArgs").style.display  = (mode === "integrate") ? "flex" : "none";
   document.getElementById("solveArgs").style.display= (mode === "solve") ? "flex" : "none";
   document.getElementById("plotArgs").style.display = (mode === "plot") ? "flex" : "none";
+  document.getElementById("plot3dArgs").style.display = (mode === "plot3d") ? "flex" : "none";
 
   const hint = document.getElementById("hint");
   const hints = {
@@ -241,6 +254,15 @@ async function run(){
     payload.x_min = document.getElementById("xmin").value;
     payload.x_max = document.getElementById("xmax").value;
     payload.n = document.getElementById("npts").value;
+  }
+  if (mode === "plot3d") {
+    payload.x_min = document.getElementById("x3min").value;
+    payload.x_max = document.getElementById("x3max").value;
+    payload.y_min = document.getElementById("y3min").value;
+    payload.y_max = document.getElementById("y3max").value;
+    payload.n = document.getElementById("n3").value;
+    payload.x_var = "x";
+    payload.y_var = "y";
   }
 
   const runBtn = document.getElementById("runBtn");

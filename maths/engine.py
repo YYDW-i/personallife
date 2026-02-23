@@ -220,6 +220,77 @@ def plot_2d(func_str: str, var_name="x", x_min=-5, x_max=5, n=400, workspace: di
         "img_base64": img_b64,
     }
 
+def plot_3d(func_str: str,
+            x_name="x", y_name="y",
+            x_min=-5, x_max=5,
+            y_min=-5, y_max=5,
+            n=80,
+            workspace: dict | None = None):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+    workspace = workspace or {}
+    x = _sym(x_name)
+    y = _sym(y_name)
+
+    local_ws = dict(workspace)
+    local_ws[x_name] = x
+    local_ws[y_name] = y
+
+    expr = safe_parse(func_str, local_ws)
+    f = sp.lambdify((x, y), expr, modules=["numpy"])
+
+    x_min = float(x_min); x_max = float(x_max)
+    y_min = float(y_min); y_max = float(y_max)
+    n = int(n)
+    if n < 20 or n > 250:
+        raise ValueError("3D 网格点数 n 建议 20~250（太大很卡）")
+
+    xs = np.linspace(x_min, x_max, n)
+    ys = np.linspace(y_min, y_max, n)
+    X, Y = np.meshgrid(xs, ys)
+
+    with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+        Z = f(X, Y)
+
+    Z = np.array(Z, dtype=float)
+
+    # 1) 非有限值断开（不连续/除零）
+    Z[~np.isfinite(Z)] = np.nan
+
+    # 2) 裁剪爆炸值（避免“冲天柱”把图拉爆）
+    abs_z = np.abs(Z)
+    finite_abs = abs_z[np.isfinite(abs_z)]
+    if finite_abs.size > 0:
+        cap = np.nanpercentile(finite_abs, 98)
+        cap = max(cap * 3, 50)
+        Z[abs_z > cap] = np.nan
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, linewidth=0, antialiased=True)
+
+    ax.set_xlabel(x_name)
+    ax.set_ylabel(y_name)
+    ax.set_zlabel("z")
+
+    # 可选：加一个俯视投影等高线，更好读（你喜欢可以保留）
+    # ax.contour(X, Y, Z, zdir='z', offset=np.nanmin(Z[np.isfinite(Z)]) if np.isfinite(Z).any() else -1, linewidths=0.5)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+
+    img_b64 = base64.b64encode(buf.read()).decode("utf-8")
+    return {
+        "kind": "plot",
+        "func_latex": sp.latex(expr),
+        "img_base64": img_b64,
+    }
+
 def run(mode: str, payload: dict, workspace: dict | None = None):
     workspace = workspace or {}
     mode = (mode or "eval").lower()
@@ -249,6 +320,18 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
             x_min=payload.get("x_min", -10),
             x_max=payload.get("x_max", 10),
             n=payload.get("n", 400),
+            workspace=workspace
+        )
+    if mode == "plot3d":
+        return plot_3d(
+            func_str=expr,
+            x_name=payload.get("x_var", "x"),
+            y_name=payload.get("y_var", "y"),
+            x_min=payload.get("x_min", -5),
+            x_max=payload.get("x_max", 5),
+            y_min=payload.get("y_min", -5),
+            y_max=payload.get("y_max", 5),
+            n=payload.get("n", 80),
             workspace=workspace
         )
 
