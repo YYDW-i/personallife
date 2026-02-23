@@ -24,7 +24,8 @@ def api_plot(request):
     x_min = payload.get("x_min", -5)
     x_max = payload.get("x_max", 5)
     try:
-        out = plot_2d(func, "x", x_min, x_max)
+        n = payload.get("n", 400)
+        out = plot_2d(func, "x", x_min, x_max, n=n)
         return JsonResponse({"ok": True, "data": out})
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)

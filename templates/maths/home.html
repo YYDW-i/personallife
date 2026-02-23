@@ -6,67 +6,199 @@
   <div class="card-title">Math Lab</div>
   <div class="card-subtitle">像 MATLAB 一样做计算、作图、可视化（无需写代码）</div>
 
-  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;">
-    <div class="glass" style="padding:14px; border-radius:16px; flex:1; min-width:280px;">
-      <div style="font-weight:700; margin-bottom:8px;">表达式计算</div>
-      <input id="expr" class="input" placeholder="例：2*sin(pi/4)+sqrt(2)" />
-      <button class="btn" style="margin-top:10px;" onclick="doEval()">计算</button>
-      <div id="eval_out" class="muted" style="margin-top:10px;"></div>
+  <!-- 模式 + 主输入 + 运行 -->
+  <div class="glass" style="padding:14px; border-radius:16px; margin-top:14px;">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <select id="mode" class="input" style="width:140px;">
+        <option value="eval">计算</option>
+        <option value="plot">作图</option>
+      </select>
+
+      <input id="mainInput" class="input" style="flex:1; min-width:260px;"
+             placeholder="例：10*10  或  sin(x)+x^2/3" />
+
+      <button type="button" class="btn" id="runBtn">运行</button>
+      <button type="button" class="btn subtle" id="clearBtn">清空</button>
     </div>
 
-    <div class="glass" style="padding:14px; border-radius:16px; flex:1; min-width:280px;">
-      <div style="font-weight:700; margin-bottom:8px;">函数作图</div>
-      <input id="func" class="input" placeholder="例：sin(x) + x/3" />
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <input id="xmin" class="input" style="width:120px;" placeholder="-5" />
-        <input id="xmax" class="input" style="width:120px;" placeholder="5" />
-      </div>
-      <button class="btn" style="margin-top:10px;" onclick="doPlot()">画图</button>
-      <div id="plot_out" style="margin-top:10px;"></div>
+    <!-- 作图参数：仅 plot 模式显示 -->
+    <div id="plotArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">x 范围：</span>
+      <input id="xmin" class="input" style="width:120px;" value="-10" />
+      <input id="xmax" class="input" style="width:120px;" value="10" />
+      <span class="muted">点数：</span>
+      <input id="npts" class="input" style="width:120px;" value="400" />
     </div>
+  </div>
+
+  <!-- 数学键盘 -->
+  <div class="glass" style="padding:14px; border-radius:16px; margin-top:12px;">
+    <div style="font-weight:700; margin-bottom:10px;">数学键盘</div>
+
+    <div style="display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:8px;">
+      <!-- 基础 -->
+      <button type="button" class="btn subtle" onclick="ins('7')">7</button>
+      <button type="button" class="btn subtle" onclick="ins('8')">8</button>
+      <button type="button" class="btn subtle" onclick="ins('9')">9</button>
+      <button type="button" class="btn subtle" onclick="ins('(')">(</button>
+      <button type="button" class="btn subtle" onclick="ins(')')">)</button>
+      <button type="button" class="btn subtle" onclick="ins('+')">+</button>
+      <button type="button" class="btn subtle" onclick="ins('-')">-</button>
+      <button type="button" class="btn subtle" onclick="ins('*')">×</button>
+
+      <button type="button" class="btn subtle" onclick="ins('4')">4</button>
+      <button type="button" class="btn subtle" onclick="ins('5')">5</button>
+      <button type="button" class="btn subtle" onclick="ins('6')">6</button>
+      <button type="button" class="btn subtle" onclick="ins('x')">x</button>
+      <button type="button" class="btn subtle" onclick="ins('pi')">π</button>
+      <button type="button" class="btn subtle" onclick="ins('/')">÷</button>
+      <button type="button" class="btn subtle" onclick="ins('^')">^</button>
+      <button type="button" class="btn subtle" onclick="backspace()">⌫</button>
+
+      <button type="button" class="btn subtle" onclick="ins('1')">1</button>
+      <button type="button" class="btn subtle" onclick="ins('2')">2</button>
+      <button type="button" class="btn subtle" onclick="ins('3')">3</button>
+      <button type="button" class="btn subtle" onclick="ins('0')">0</button>
+      <button type="button" class="btn subtle" onclick="ins('.')">.</button>
+      <button type="button" class="btn subtle" onclick="ins('sqrt(')">√</button>
+      <button type="button" class="btn subtle" onclick="ins('Abs(')">|x|</button>
+      <button type="button" class="btn subtle" onclick="ins('exp(')">exp</button>
+    </div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+      <button type="button" class="btn subtle" onclick="ins('sin(')">sin</button>
+      <button type="button" class="btn subtle" onclick="ins('cos(')">cos</button>
+      <button type="button" class="btn subtle" onclick="ins('tan(')">tan</button>
+      <button type="button" class="btn subtle" onclick="ins('log(')">log</button>
+      <button type="button" class="btn subtle" onclick="ins('ln(')">ln</button>
+      <button type="button" class="btn subtle" onclick="ins(')')">)</button>
+    </div>
+
+    <div class="muted" style="margin-top:8px; font-size:12px;">
+      小技巧：输入里用 <b>^</b> 表示乘方（比如 x^2），函数记得带括号（sin(x)）。
+    </div>
+  </div>
+
+  <!-- 输出区 -->
+  <div class="glass" style="padding:14px; border-radius:16px; margin-top:12px;">
+    <div style="font-weight:700; margin-bottom:8px;">结果</div>
+    <div id="status" class="muted" style="margin-bottom:8px;"></div>
+    <div id="outText" style="white-space:pre-wrap;"></div>
+    <div id="outPlot" style="margin-top:10px;"></div>
   </div>
 </section>
 
 <script>
 function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
+  let v = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "=")) v = decodeURIComponent(c.slice(name.length + 1));
+  });
+  return v;
+}
+const csrftoken = getCookie("csrftoken");
+
+async function postJSON(url, payload) {
+  const r = await fetch(url, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken
+    },
+    body: JSON.stringify(payload)
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || data.detail || `HTTP ${r.status}`);
+  return data;
+}
+
+function normalizeExpr(s){
+  return (s || "").replaceAll("×","*").replaceAll("÷","/").trim();
+}
+
+function ins(token){
+  const el = document.getElementById("mainInput");
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  const v = el.value;
+  el.value = v.slice(0,start) + token + v.slice(end);
+  const pos = start + token.length;
+  el.setSelectionRange(pos,pos);
+  el.focus();
+}
+
+function backspace(){
+  const el = document.getElementById("mainInput");
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  if (start !== end){
+    ins(""); // 会覆盖选中内容
+    return;
   }
-  return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-
-async function doEval(){
-  const expr = document.getElementById("expr").value;
-  const r = await fetch("{% url 'maths:api_eval' %}", {
-    method:"POST",
-    headers: {"Content-Type":"application/json","X-CSRFToken": csrftoken},
-    body: JSON.stringify({expr})
-  });
-  const data = await r.json();
-  // ...
+  if (start <= 0) return;
+  const v = el.value;
+  el.value = v.slice(0,start-1) + v.slice(start);
+  el.setSelectionRange(start-1,start-1);
+  el.focus();
 }
 
-async function doPlot(){
-  const func = document.getElementById("func").value;
-  const x_min = parseFloat(document.getElementById("xmin").value || -5);
-  const x_max = parseFloat(document.getElementById("xmax").value || 5);
+function setStatus(msg){ document.getElementById("status").textContent = msg || ""; }
+function clearOut(){
+  document.getElementById("outText").textContent = "";
+  document.getElementById("outPlot").innerHTML = "";
+}
 
-  const r = await fetch("{% url 'maths:api_plot' %}", {
-    method:"POST",
-    headers: {"Content-Type":"application/json","X-CSRFToken": csrftoken},
-    body: JSON.stringify({func, x_min, x_max})
-  });
-  const data = await r.json();
-  // ...
+const modeEl = document.getElementById("mode");
+modeEl.addEventListener("change", () => {
+  document.getElementById("plotArgs").style.display = (modeEl.value === "plot") ? "flex" : "none";
+  clearOut();
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  document.getElementById("mainInput").value = "";
+  clearOut();
+  setStatus("");
+});
+
+document.getElementById("runBtn").addEventListener("click", run);
+document.getElementById("mainInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); run(); }
+});
+
+async function run(){
+  clearOut();
+  const mode = modeEl.value;
+  const expr = normalizeExpr(document.getElementById("mainInput").value);
+  if (!expr) { setStatus("请输入表达式"); return; }
+
+  const runBtn = document.getElementById("runBtn");
+  runBtn.disabled = true;
+  setStatus("运行中…");
+
+  try{
+    if (mode === "eval"){
+      const data = await postJSON("{% url 'maths:api_eval' %}", { expr });
+      setStatus("完成 ✅");
+      document.getElementById("outText").textContent =
+        `结果：${data.data.result_str}\n\nLaTeX：${data.data.result_latex}`;
+    } else {
+      const x_min = parseFloat(document.getElementById("xmin").value || -10);
+      const x_max = parseFloat(document.getElementById("xmax").value || 10);
+      const n = parseInt(document.getElementById("npts").value || "400");
+      const data = await postJSON("{% url 'maths:api_plot' %}", { func: expr, x_min, x_max, n });
+      setStatus("完成 ✅");
+      document.getElementById("outText").textContent = `f(x) = ${expr}`;
+      document.getElementById("outPlot").innerHTML =
+        `<img style="max-width:100%; border-radius:14px;" src="data:image/png;base64,${data.data.img_base64}" />`;
+    }
+  }catch(err){
+    setStatus("出错 ❌");
+    document.getElementById("outText").textContent = String(err.message || err);
+  }finally{
+    runBtn.disabled = false;
+  }
 }
 </script>
 {% endblock %}
