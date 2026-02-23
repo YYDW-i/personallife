@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}卦象结果 · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="card-title">卦象结果</div>
+  {% if question %}<div class="muted">问题：{{ question }}</div>{% endif %}
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+    <div class="glass" style="padding:14px; border-radius:16px;">
+      <div style="font-weight:800;">本卦：{{ primary.name }} {{ primary.symbol }}</div>
+      <pre style="margin:10px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height:1.35;">{% for L in primary_lines %}{{ L }}
+{% endfor %}</pre>
+      <div class="muted">卦辞：{{ primary.scripture }}</div>
+      {% if moving_lines %}
+        <div class="muted" style="margin-top:8px;">动爻：第 {{ moving_lines|join:", " }} 爻</div>
+      {% else %}
+        <div class="muted" style="margin-top:8px;">无动爻</div>
+      {% endif %}
+    </div>
+
+    <div class="glass" style="padding:14px; border-radius:16px;">
+      {% if relating %}
+        <div style="font-weight:800;">之卦：{{ relating.name }} {{ relating.symbol }}</div>
+        <pre style="margin:10px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height:1.35;">{% for L in relating_lines %}{{ L }}
+{% endfor %}</pre>
+        <div class="muted">卦辞：{{ relating.scripture }}</div>
+      {% else %}
+        <div class="muted">无之卦（因为无动爻）</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <div style="font-weight:800; margin-bottom:8px;">爻辞（本卦）</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for line in primary.lines %}
+        <div class="glass" style="padding:12px; border-radius:14px;">
+          <div style="font-weight:700;">{{ line.name }}</div>
+          <div class="muted" style="line-height:1.7;">{{ line.scripture }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if ai %}
+  <div style="margin-top:16px;">
+    <div style="font-weight:800; margin-bottom:8px;">AI 译文/解读</div>
+
+    {% if ai.error %}
+      <div class="muted">{{ ai.error }}</div>
+    {% else %}
+      {% if ai.translation %}
+        <div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+          <div style="font-weight:700; margin-bottom:6px;">译文</div>
+          <div class="muted" style="line-height:1.7;">{{ ai.translation }}</div>
+        </div>
+      {% endif %}
+
+      {% if ai.interpretation %}
+        <div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+          <div style="font-weight:700; margin-bottom:6px;">行动建议</div>
+          <ul class="muted" style="line-height:1.7; margin-left:18px;">
+            {% for it in ai.interpretation %}
+              <li>{{ it }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if ai.anecdotes %}
+        <div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+          <div style="font-weight:700; margin-bottom:6px;">典故</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            {% for a in ai.anecdotes %}
+              <div class="glass" style="padding:10px; border-radius:12px;">
+                <div style="font-weight:700;">{{ a.title }}</div>
+                <div class="muted" style="line-height:1.7;">{{ a.content }}</div>
+                {% if a.source %}
+                  <div class="muted" style="margin-top:6px; font-size:12px;">来源：{{ a.source }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if ai.disclaimer %}
+        <div class="muted" style="margin-top:8px;">{{ ai.disclaimer }}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

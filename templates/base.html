@@ -24,7 +24,7 @@
         {% url 'maths:home' as maths_url %}
         {% url 'planner:index' as cal_url %}
         {% url 'news:index' as news_url %}
-        {% url 'analytics_app:index' as ana_url %}
+        {% url 'analytics_app:iching_index' as analytics_app_url %}
         {% url 'profiles:settings' as set_url %}
         <div class="tabs-left">
           <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
@@ -32,7 +32,7 @@
           <a class="tab {% if request.path|slice:":8" == "/maths/" %}active{% endif %}" href="{{ maths_url }}">Maths</a>
           <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
           <a class="tab {% if request.path|slice:":7" == "/news/" %}active{% endif %}" href="{{ news_url }}">News</a>
-          <a class="tab {% if request.path|slice:":11" == "/analytics/" %}active{% endif %}" href="{{ ana_url }}">Analytics</a>
+          <a class="tab {% if request.path|slice:":25" == "/analytics_app/iching" %}active{% endif %}" href="{{ analytics_app_url }}">Analytics</a>
           <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
         </div>
        

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}卦象分析 · LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card">
+  <div class="card-title">卦象分析</div>
+  <div class="card-subtitle">三币起卦 / 本卦与之卦 / 卦辞爻辞 /（可选）AI 译文解读</div>
+
+  <form method="POST" action="{% url 'analytics_app:iching_cast' %}" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+    {% csrf_token %}
+    <input class="input" name="question" placeholder="你想问什么（可不填）" />
+
+    <select class="input" name="method">
+      <option value="coins">三币起卦（推荐）</option>
+      <option value="random">纯随机</option>
+      <option value="time">时间起卦（简化）</option>
+    </select>
+
+    <label class="muted" style="display:flex; align-items:center; gap:10px;">
+      <input type="checkbox" name="use_ai" value="1" />
+      使用智谱 AI 生成译文/解读（需配置 ZHIPU_API_KEY）
+    </label>
+
+    <button class="btn">开始占卜</button>
+  </form>
+
+  <div class="muted" style="margin-top:14px; line-height:1.7;">
+    提示：占卜内容仅作文化体验与自我反思，不替代医疗/法律/财务等专业意见。
+  </div>
+</section>
+{% endblock %}
