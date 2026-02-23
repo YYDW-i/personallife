@@ -68,12 +68,12 @@ def render_lines(arr: List[int], moving_lines: List[int], nums: List[int]) -> Li
     for i in range(6):
         is_yang = arr[i] == 1
         is_moving = (i + 1) in moving_lines
-
+        
         if is_yang:
             s = "█████████"
             mark = " ○" if (is_moving and nums[i] == 9) else ""
         else:
-            s = "████ ████"
+            s = "███      ███"
             mark = " ×" if (is_moving and nums[i] == 6) else ""
         out.append(f"{s}{mark}")
     return out
