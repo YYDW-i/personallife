@@ -4,6 +4,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .engine import eval_expr, plot_2d
 
+from .engine import run as run_engine
+
 @login_required
 @require_POST
 def api_eval(request):
@@ -26,6 +28,18 @@ def api_plot(request):
     try:
         n = payload.get("n", 400)
         out = plot_2d(func, "x", x_min, x_max, n=n)
+        return JsonResponse({"ok": True, "data": out})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
+    
+@login_required
+@require_POST
+def api_run(request):
+    payload = json.loads(request.body.decode("utf-8"))
+    mode = payload.get("mode", "eval")
+
+    try:
+        out = run_engine(mode, payload, workspace={})  # MVP：先不做 workspace
         return JsonResponse({"ok": True, "data": out})
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)

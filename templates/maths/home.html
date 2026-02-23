@@ -4,26 +4,61 @@
 {% block content %}
 <section class="glass card">
   <div class="card-title">Math Lab</div>
-  <div class="card-subtitle">像 MATLAB 一样做计算、作图、可视化（无需写代码）</div>
+  <div class="card-subtitle">计算 / 化简 / 求导 / 积分 / 解方程 / 作图（无需写代码）</div>
 
-  <!-- 模式 + 主输入 + 运行 -->
+  <!-- 主控制台 -->
   <div class="glass" style="padding:14px; border-radius:16px; margin-top:14px;">
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <select id="mode" class="input" style="width:140px;">
+      <select id="mode" class="input" style="width:160px;">
         <option value="eval">计算</option>
+        <option value="simplify">化简</option>
+        <option value="diff">求导</option>
+        <option value="integrate">积分</option>
+        <option value="solve">解方程</option>
         <option value="plot">作图</option>
       </select>
 
       <input id="mainInput" class="input" style="flex:1; min-width:260px;"
-             placeholder="例：10*10  或  sin(x)+x^2/3" />
+             placeholder="例：10*10 / (x^2-1)/(x-1) / sin(x) / x^2-2=0 / sin(x) 作图" />
 
       <button type="button" class="btn" id="runBtn">运行</button>
       <button type="button" class="btn subtle" id="clearBtn">清空</button>
     </div>
 
-    <!-- 作图参数：仅 plot 模式显示 -->
+    <!-- 通用参数：变量 -->
+    <div id="commonArgs" style="display:flex; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">变量：</span>
+      <input id="vare" class="input" style="width:120px;" value="x" />
+      <span class="muted" id="hint"></span>
+    </div>
+
+    <!-- 求导参数 -->
+    <div id="diffArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">阶数：</span>
+      <input id="order" class="input" style="width:120px;" value="1" />
+    </div>
+
+    <!-- 积分参数 -->
+    <div id="intArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">定积分上下限（可留空做不定积分）：</span>
+      <input id="a" class="input" style="width:120px;" placeholder="a" />
+      <input id="b" class="input" style="width:120px;" placeholder="b" />
+    </div>
+
+    <!-- 解方程参数 -->
+    <div id="solveArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">方法：</span>
+      <select id="method" class="input" style="width:160px;">
+        <option value="symbolic">符号解</option>
+        <option value="numeric">数值解（nsolve）</option>
+      </select>
+      <span class="muted">初值 x0（仅数值解）：</span>
+      <input id="x0" class="input" style="width:140px;" placeholder="例：1" />
+    </div>
+
+    <!-- 作图参数 -->
     <div id="plotArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
-      <span class="muted">x 范围：</span>
+      <span class="muted">范围：</span>
       <input id="xmin" class="input" style="width:120px;" value="-10" />
       <input id="xmax" class="input" style="width:120px;" value="10" />
       <span class="muted">点数：</span>
@@ -31,12 +66,11 @@
     </div>
   </div>
 
-  <!-- 数学键盘 -->
+  <!-- 数学键盘（同上一版，略微精简也行） -->
   <div class="glass" style="padding:14px; border-radius:16px; margin-top:12px;">
     <div style="font-weight:700; margin-bottom:10px;">数学键盘</div>
 
     <div style="display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:8px;">
-      <!-- 基础 -->
       <button type="button" class="btn subtle" onclick="ins('7')">7</button>
       <button type="button" class="btn subtle" onclick="ins('8')">8</button>
       <button type="button" class="btn subtle" onclick="ins('9')">9</button>
@@ -72,10 +106,11 @@
       <button type="button" class="btn subtle" onclick="ins('log(')">log</button>
       <button type="button" class="btn subtle" onclick="ins('ln(')">ln</button>
       <button type="button" class="btn subtle" onclick="ins(')')">)</button>
+      <button type="button" class="btn subtle" onclick="ins('=')">=</button>
     </div>
 
     <div class="muted" style="margin-top:8px; font-size:12px;">
-      小技巧：输入里用 <b>^</b> 表示乘方（比如 x^2），函数记得带括号（sin(x)）。
+      支持：<b>^</b> 表示乘方；解方程可写 <b>x^2-2=0</b> 或 <b>x^2-2</b>（默认=0）。
     </div>
   </div>
 
@@ -103,10 +138,7 @@ async function postJSON(url, payload) {
   const r = await fetch(url, {
     method: "POST",
     credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrftoken
-    },
+    headers: {"Content-Type":"application/json","X-CSRFToken": csrftoken},
     body: JSON.stringify(payload)
   });
   const data = await r.json().catch(() => ({}));
@@ -128,13 +160,12 @@ function ins(token){
   el.setSelectionRange(pos,pos);
   el.focus();
 }
-
 function backspace(){
   const el = document.getElementById("mainInput");
   const start = el.selectionStart ?? el.value.length;
   const end = el.selectionEnd ?? el.value.length;
   if (start !== end){
-    ins(""); // 会覆盖选中内容
+    ins("");
     return;
   }
   if (start <= 0) return;
@@ -150,12 +181,27 @@ function clearOut(){
   document.getElementById("outPlot").innerHTML = "";
 }
 
-const modeEl = document.getElementById("mode");
-modeEl.addEventListener("change", () => {
-  document.getElementById("plotArgs").style.display = (modeEl.value === "plot") ? "flex" : "none";
-  clearOut();
-});
+function updatePanels(){
+  const mode = document.getElementById("mode").value;
+  document.getElementById("diffArgs").style.display = (mode === "diff") ? "flex" : "none";
+  document.getElementById("intArgs").style.display  = (mode === "integrate") ? "flex" : "none";
+  document.getElementById("solveArgs").style.display= (mode === "solve") ? "flex" : "none";
+  document.getElementById("plotArgs").style.display = (mode === "plot") ? "flex" : "none";
 
+  const hint = document.getElementById("hint");
+  const hints = {
+    eval: "示例：2*sin(pi/4)+sqrt(2)",
+    simplify: "示例：(x^2-1)/(x-1)",
+    diff: "示例：sin(x)*exp(x)",
+    integrate: "示例：1/(1+x^2)",
+    solve: "示例：x^2-2=0",
+    plot: "示例：sin(x)+x/3"
+  };
+  hint.textContent = hints[mode] || "";
+  clearOut();
+}
+
+document.getElementById("mode").addEventListener("change", updatePanels);
 document.getElementById("clearBtn").addEventListener("click", () => {
   document.getElementById("mainInput").value = "";
   clearOut();
@@ -169,36 +215,53 @@ document.getElementById("mainInput").addEventListener("keydown", (e) => {
 
 async function run(){
   clearOut();
-  const mode = modeEl.value;
+  const mode = document.getElementById("mode").value;
   const expr = normalizeExpr(document.getElementById("mainInput").value);
+  const vare  = (document.getElementById("vare").value || "x").trim();
+
   if (!expr) { setStatus("请输入表达式"); return; }
+
+  const payload = { mode, expr, vare };
+
+  if (mode === "diff") payload.order = document.getElementById("order").value;
+  if (mode === "integrate") {
+    payload.a = document.getElementById("a").value;
+    payload.b = document.getElementById("b").value;
+  }
+  if (mode === "solve") {
+    payload.method = document.getElementById("method").value;
+    payload.x0 = document.getElementById("x0").value;
+  }
+  if (mode === "plot") {
+    payload.x_min = document.getElementById("xmin").value;
+    payload.x_max = document.getElementById("xmax").value;
+    payload.n = document.getElementById("npts").value;
+  }
 
   const runBtn = document.getElementById("runBtn");
   runBtn.disabled = true;
   setStatus("运行中…");
 
   try{
-    if (mode === "eval"){
-      const data = await postJSON("{% url 'maths:api_eval' %}", { expr });
-      setStatus("完成 ✅");
-      document.getElementById("outText").textContent =
-        `结果：${data.data.result_str}\n\nLaTeX：${data.data.result_latex}`;
-    } else {
-      const x_min = parseFloat(document.getElementById("xmin").value || -10);
-      const x_max = parseFloat(document.getElementById("xmax").value || 10);
-      const n = parseInt(document.getElementById("npts").value || "400");
-      const data = await postJSON("{% url 'maths:api_plot' %}", { func: expr, x_min, x_max, n });
-      setStatus("完成 ✅");
-      document.getElementById("outText").textContent = `f(x) = ${expr}`;
+    const data = await postJSON("{% url 'maths:api_run' %}", payload);
+    setStatus("完成 ✅");
+
+    if (data.data.kind === "plot") {
+      document.getElementById("outText").textContent = `模式：${mode}\n输入：${expr}`;
       document.getElementById("outPlot").innerHTML =
         `<img style="max-width:100%; border-radius:14px;" src="data:image/png;base64,${data.data.img_base64}" />`;
+    } else {
+      document.getElementById("outText").textContent =
+        `模式：${mode}\n输入：${expr}\n\n结果：${data.data.result_str}\n\nLaTeX：${data.data.result_latex}`;
     }
-  }catch(err){
+  } catch(err){
     setStatus("出错 ❌");
     document.getElementById("outText").textContent = String(err.message || err);
-  }finally{
+  } finally {
     runBtn.disabled = false;
   }
 }
+
+updatePanels();
 </script>
 {% endblock %}
