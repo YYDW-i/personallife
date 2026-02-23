@@ -183,7 +183,24 @@ def plot_2d(func_str: str, var_name="x", x_min=-5, x_max=5, n=400, workspace: di
 
     xs = np.linspace(x_min, x_max, n)
     ys = f(xs)
+    
+    with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+        ys = f(xs)
 
+    ys = np.array(ys, dtype=float)
+
+    # ✅ 1) 非有限值断开
+    ys[~np.isfinite(ys)] = np.nan
+
+    # ✅ 2) 裁剪过大的值（避免竖线/拉爆 y 轴）
+    abs_y = np.abs(ys)
+    finite_abs = abs_y[np.isfinite(abs_y)]
+    if finite_abs.size > 0:
+        cap = np.nanpercentile(finite_abs, 98)  # 98分位当作“合理上界”
+        cap = max(cap * 3, 50)                  # 给一点余量，且不低于50
+        ys[abs_y > cap] = np.nan
+    finite_y = ys[np.isfinite(ys)]
+    
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(xs, ys)
