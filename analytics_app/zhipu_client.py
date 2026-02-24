@@ -106,17 +106,9 @@ def zhipu_interpret_optional(
         "max_tokens": 2048,
         "reasoning_method": "none"
     }
-
-
-    print("准备调用 _post_json")
     try:
         data = _post_json(f"{ZHIPU_BASE}/chat/completions", payload, timeout=45)
-
-        print("_post_json 返回 data:", data)
         content = data["choices"][0]["message"]["content"]
-
-        print("content 内容:", content)
-
         # 强制解析 JSON
         def _safe_json_parse(content: str) -> dict:
             if not content or not content.strip():
@@ -142,7 +134,6 @@ def zhipu_interpret_optional(
             # 实在不行，把原文截断抛出来，便于你在页面上看到它到底回了啥
             raise RuntimeError(f"AI 未返回合法 JSON，原始内容前200字：{s[:200]!r}")
         result = _safe_json_parse(content)
-        print("解析后的 result:", result)
         return result
     except Exception as e:
         return {"error": f"AI 解读失败：{e}"}
