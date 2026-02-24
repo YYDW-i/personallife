@@ -22,7 +22,7 @@ def iching_cast(request):
     question = (request.POST.get("question") or "").strip()
     method = request.POST.get("method") or "coins"
     use_ai = request.POST.get("use_ai") == "1"
-
+    
     try:
         # 确保本地 iching.json 存在：没有就自动下载一次并缓存
         ensure_dataset_ready()
@@ -53,6 +53,12 @@ def iching_cast(request):
             relating=relating,
             moving_lines=r.moving_lines
         )
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"AI 返回内容: {ai}")
+        # 也可以直接打印到控制台（开发服务器会显示）
+        print("=== AI DEBUG ===")
+        print(ai)
 
     ctx = {
         "question": question,

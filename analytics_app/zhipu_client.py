@@ -1,4 +1,6 @@
 import json
+import time
+import socket
 import os
 import urllib.request
 from typing import Any, Dict, Optional
@@ -11,31 +13,49 @@ ZHIPU_MODEL = settings.ZAI_MODEL  # 你也可以改成 glm-5 等:contentReferenc
 ZHIPU_BASE = settings.ZAI_BASE_URL
 
 
-def _post_json(url: str, payload: dict, timeout: int = 30) -> dict:
+def _post_json(url: str, payload: dict, timeout: int = 120, retries: int = 3) -> dict:
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("Authorization", f"Bearer {ZHIPU_API_KEY}")
+    print(f"发起请求: url={url}, retries={retries}")
 
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read().decode("utf-8")
-        return json.loads(raw)
+    for attempt in range(retries):
+        print(f"尝试 {attempt+1}/{retries}")
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {ZHIPU_API_KEY}")
 
-    except HTTPError as e:
-        body = e.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"HTTP {e.code}: {body}")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = resp.read().decode("utf-8", errors="ignore")
+            print(f"请求成功，状态码: {resp.status}, 原始响应前200: {raw[:200]}")
+            return json.loads(raw)
 
-    except URLError as e:
-        raise RuntimeError(f"Network error: {e}")
+        except HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
+            print(f"HTTPError: {e.code}, body: {body}")
+            raise RuntimeError(f"HTTP {e.code}: {body}")
+
+        except (socket.timeout, TimeoutError, URLError) as e:
+            # 最后一次仍失败就抛出
+            print(f"网络异常: {e}")
+            if attempt == retries - 1:
+                raise RuntimeError(f"请求超时/网络异常：{e}")
+            # 退避：1s, 2s, 4s...
+            time.sleep(2 ** attempt)
+        except Exception as e:
+            print(f"其他异常: {e}")
+            if attempt == retries - 1:
+                raise RuntimeError(f"请求失败: {e}")
+            time.sleep(2 ** attempt)
 
 
 def zhipu_interpret_optional(
+    
     question: str,
     primary: Dict[str, Any],
     relating: Optional[Dict[str, Any]],
     moving_lines: list[int],
 ) -> Optional[Dict[str, Any]]:
+    
     if not ZHIPU_API_KEY:
         return {
             "error": "未配置 ZHIPU_API_KEY（环境变量）。已跳过 AI 解读。",
@@ -69,25 +89,34 @@ def zhipu_interpret_optional(
         "schema": {
             "translation": "把卦辞+动爻爻辞翻成现代汉语（简洁）",
             "interpretation": "结合用户问题给出 3-6 条可执行建议（列表）",
-            "anecdotes": "相关典故（列表，每条含 title, content, source 可空）",
+            "anecdotes": "与卦象结果相关的典故（列表，每条含 title, content, source 可空）",
             "disclaimer": "一句免责声明"
         }
     }
 
     payload = {
-        "model": os.getenv("ZHIPU_MODEL", "glm-4.7"),   # 用支持结构化输出的模型
+        "model": os.getenv("ZHIPU_MODEL", "glm-4"),   # 用支持结构化输出的模型
         "messages": [
             {"role": "system", "content": sys},
             {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
         ],
-        "temperature": 0.7,
+        "temperature": 0.5,
         "response_format": {"type": "json_object"},     # 关键：JSON 模式
-        "stream": False
+        "stream": False,
+        "max_tokens": 2048,
+        "reasoning_method": "none"
     }
 
+
+    print("准备调用 _post_json")
     try:
         data = _post_json(f"{ZHIPU_BASE}/chat/completions", payload, timeout=45)
+
+        print("_post_json 返回 data:", data)
         content = data["choices"][0]["message"]["content"]
+
+        print("content 内容:", content)
+
         # 强制解析 JSON
         def _safe_json_parse(content: str) -> dict:
             if not content or not content.strip():
@@ -112,5 +141,8 @@ def zhipu_interpret_optional(
 
             # 实在不行，把原文截断抛出来，便于你在页面上看到它到底回了啥
             raise RuntimeError(f"AI 未返回合法 JSON，原始内容前200字：{s[:200]!r}")
+        result = _safe_json_parse(content)
+        print("解析后的 result:", result)
+        return result
     except Exception as e:
         return {"error": f"AI 解读失败：{e}"}
