@@ -9,3 +9,7 @@ matplotlib>=3.7                 # 绘图（数学实验室、2D/3D作图）
 feedparser>=6.0                 # RSS订阅解析（新闻模块）
 requests>=2.31                  # HTTP请求（新闻模块API抓取）
 openai>=1.0                      # 智谱AI SDK（健康分析、卦象解读）
+trafilatura>=1.0                    # 网页内容提取（新闻模块）
+beautifulsoup4>=4.12              # HTML解析（新闻模块）
+lxml>=5.4                       # XML解析（新闻模块）
+pillow>=10.0                    # 图像处理（2D/3D作图）
