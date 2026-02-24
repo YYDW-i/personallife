@@ -57,9 +57,6 @@ def iching_cast(request):
         logger = logging.getLogger(__name__)
         logger.debug(f"AI 返回内容: {ai}")
         # 也可以直接打印到控制台（开发服务器会显示）
-        print("=== AI DEBUG ===")
-        print(ai)
-
     ctx = {
         "question": question,
         "method": method,
