@@ -5,7 +5,8 @@ from django.utils import timezone
 from news.forms import NewsPreferenceForm
 from news.models import UserNewsPreference, DailyBrief
 from news.services.brief import build_brief_for_user
-
+from news.services.fetcher import fetch_all_sources
+from django.contrib import messages
 
 @login_required
 def index(request):
@@ -34,6 +35,8 @@ def preferences(request):
 @login_required
 def refresh_today(request):
     if request.method == "POST":
+        new_count = fetch_all_sources()
     # 手动刷新：立即为当前用户生成一次今日简报
         build_brief_for_user(request.user, date=timezone.localdate())
+        messages.success(request, f"抓取了 {new_count} 条新新闻，简报已刷新")
     return redirect("news:index")
