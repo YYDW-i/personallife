@@ -26,7 +26,7 @@ def _post_json(url: str, payload: dict, timeout: int = 120, retries: int = 3) ->
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read().decode("utf-8", errors="ignore")
-            print(f"请求成功，状态码: {resp.status}, 原始响应前200: {raw[:200]}")
+            print(f"请求成功，状态码: {resp.status}")
             return json.loads(raw)
 
         except HTTPError as e:

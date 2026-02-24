@@ -2,11 +2,32 @@
 {% block title %}卦象分析 · LocalLife{% endblock %}
 
 {% block content %}
+<style>
+  .spinner {
+    border: 4px solid rgba(0,0,0,0.1);
+    border-left-color: #09f;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin {
+      to { transform: rotate(360deg); }
+  }
+</style>
 <section class="glass card">
   <div class="card-title">卦象分析</div>
   <div class="card-subtitle">三币起卦 / 本卦与之卦 / 卦辞爻辞 /（可选）AI 译文解读</div>
 
-  <form method="POST" action="{% url 'analytics_app:iching_cast' %}" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+  <!-- 加载动画容器（默认隐藏） -->
+  <div id="loading" style="display:none; text-align:center; margin-top:20px;">
+      <div class="spinner"></div>
+      <p>正在占卜中，请稍候...</p>
+  </div>
+
+
+  <form id="iching-form" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
     {% csrf_token %}
     <input class="input" name="question" placeholder="你想问什么（可不填）" />
 
@@ -21,11 +42,171 @@
       使用智谱 AI 生成译文/解读（需配置 ZHIPU_API_KEY）
     </label>
 
-    <button class="btn">开始占卜</button>
+    <button class="btn" type="submit">开始占卜</button>
   </form>
 
+  <div id="result-container" style="margin-top:20px;"></div>
   <div class="muted" style="margin-top:14px; line-height:1.7;">
     提示：占卜内容仅作文化体验与自我反思，不替代医疗/法律/财务等专业意见。
   </div>
 </section>
+<script>
+// 确保 DOM 加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('iching-form');
+    if (!form) {
+        console.error('表单未找到！');
+        return;
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();  // 阻止传统提交
+
+        // 显示加载动画
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('result-container').innerHTML = '';
+
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch('{% url "analytics_app:iching_cast_ajax" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || '服务器错误');
+            }
+
+            // 渲染结果（这里先简单显示 JSON）
+            renderResult(data);
+        } catch (error) {
+            document.getElementById('result-container').innerHTML = `<div class="glass card error">${error.message}</div>`;
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    });
+});
+
+function renderResult(data) {
+    let html = `<section class="glass card">`;
+    html += `<div class="card-title">卦象结果</div>`;
+    if (data.question) {
+        html += `<div class="muted">问题：${escapeHtml(data.question)}</div>`;
+    }
+
+    // 本卦与之卦的左右布局
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">`;
+
+    // 本卦
+    html += `<div class="glass" style="padding:14px; border-radius:16px;">`;
+    html += `<div style="font-weight:800;">本卦：${escapeHtml(data.primary.name)} ${escapeHtml(data.primary.symbol)}</div>`;
+    html += `<pre style="margin:10px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height:1.35;">`;
+    data.primary_lines.forEach(line => { html += line + '\n'; });
+    html += `</pre>`;
+    html += `<div class="muted">卦辞：${escapeHtml(data.primary.scripture)}</div>`;
+    if (data.moving_lines && data.moving_lines.length > 0) {
+        html += `<div class="muted" style="margin-top:8px;">动爻：第 ${data.moving_lines.join(', ')} 爻</div>`;
+    } else {
+        html += `<div class="muted" style="margin-top:8px;">无动爻</div>`;
+    }
+    html += `</div>`; // 结束本卦
+
+    // 之卦
+    html += `<div class="glass" style="padding:14px; border-radius:16px;">`;
+    if (data.relating) {
+        html += `<div style="font-weight:800;">之卦：${escapeHtml(data.relating.name)} ${escapeHtml(data.relating.symbol)}</div>`;
+        html += `<pre style="margin:10px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height:1.35;">`;
+        data.relating_lines.forEach(line => { html += line + '\n'; });
+        html += `</pre>`;
+        html += `<div class="muted">卦辞：${escapeHtml(data.relating.scripture)}</div>`;
+    } else {
+        html += `<div class="muted">无之卦（因为无动爻）</div>`;
+    }
+    html += `</div>`; // 结束之卦
+    html += `</div>`; // 结束 grid
+
+    // 爻辞列表
+    html += `<div style="margin-top:16px;">`;
+    html += `<div style="font-weight:800; margin-bottom:8px;">爻辞（本卦）</div>`;
+    html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+    data.primary.lines.forEach(line => {
+        html += `<div class="glass" style="padding:12px; border-radius:14px;">`;
+        html += `<div style="font-weight:700;">${escapeHtml(line.name)}</div>`;
+        html += `<div class="muted" style="line-height:1.7;">${escapeHtml(line.scripture)}</div>`;
+        html += `</div>`;
+    });
+    html += `</div>`;
+    html += `</div>`;
+
+    // AI 部分
+    if (data.ai) {
+        html += `<div style="margin-top:16px;">`;
+        html += `<div style="font-weight:800; margin-bottom:8px;">AI 译文/解读</div>`;
+
+        if (data.ai.error) {
+            html += `<div class="muted">${escapeHtml(data.ai.error)}</div>`;
+        } else {
+            if (data.ai.translation) {
+                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+                html += `<div style="font-weight:700; margin-bottom:6px;">译文</div>`;
+                html += `<div class="muted" style="line-height:1.7;">${escapeHtml(data.ai.translation)}</div>`;
+                html += `</div>`;
+            }
+
+            if (data.ai.interpretation && data.ai.interpretation.length > 0) {
+                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+                html += `<div style="font-weight:700; margin-bottom:6px;">行动建议</div>`;
+                html += `<ul class="muted" style="line-height:1.7; margin-left:18px;">`;
+                data.ai.interpretation.forEach(item => {
+                    html += `<li>${escapeHtml(item)}</li>`;
+                });
+                html += `</ul>`;
+                html += `</div>`;
+            }
+
+            if (data.ai.anecdotes && data.ai.anecdotes.length > 0) {
+                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+                html += `<div style="font-weight:700; margin-bottom:6px;">典故</div>`;
+                html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+                data.ai.anecdotes.forEach(a => {
+                    html += `<div class="glass" style="padding:10px; border-radius:12px;">`;
+                    html += `<div style="font-weight:700;">${escapeHtml(a.title)}</div>`;
+                    html += `<div class="muted" style="line-height:1.7;">${escapeHtml(a.content)}</div>`;
+                    if (a.source) {
+                        html += `<div class="muted" style="margin-top:6px; font-size:12px;">来源：${escapeHtml(a.source)}</div>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                html += `</div>`;
+            }
+
+            if (data.ai.disclaimer) {
+                html += `<div class="muted" style="margin-top:8px;">${escapeHtml(data.ai.disclaimer)}</div>`;
+            }
+        }
+        html += `</div>`;
+    }
+
+    html += `</section>`;
+    document.getElementById('result-container').innerHTML = html;
+}
+
+// 简单的 HTML 转义函数，防止 XSS
+function escapeHtml(unsafe) {
+    if (!unsafe) return unsafe;
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
 {% endblock %}
