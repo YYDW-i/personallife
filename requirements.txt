@@ -1,0 +1,11 @@
+# LocalLife 项目依赖清单
+# 使用以下命令安装所有依赖：
+# pip install -r requirements.txt
+
+Django>=4.2,<5.0                # Web框架
+sympy>=1.12                     # 符号计算（数学实验室）
+numpy>=1.24                     # 数值计算（数学实验室）
+matplotlib>=3.7                 # 绘图（数学实验室、2D/3D作图）
+feedparser>=6.0                 # RSS订阅解析（新闻模块）
+requests>=2.31                  # HTTP请求（新闻模块API抓取）
+openai>=1.0                      # 智谱AI SDK（健康分析、卦象解读）
