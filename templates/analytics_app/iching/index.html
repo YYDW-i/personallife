@@ -131,16 +131,32 @@ function renderResult(data) {
     html += `</div>`; // 结束之卦
     html += `</div>`; // 结束 grid
 
-    // 爻辞列表
+    // 爻辞列表（本卦 + 动爻对应的之卦爻辞）
     html += `<div style="margin-top:16px;">`;
-    html += `<div style="font-weight:800; margin-bottom:8px;">爻辞（本卦）</div>`;
+    html += `<div style="font-weight:800; margin-bottom:8px;">爻辞解读</div>`;
     html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
-    data.primary.lines.forEach(line => {
+
+    // 遍历本卦六爻
+    data.primary.lines.forEach((line, index) => {
+        const lineNumber = index + 1; // 爻位从1开始
+        const isMoving = data.moving_lines && data.moving_lines.includes(lineNumber);
+
         html += `<div class="glass" style="padding:12px; border-radius:14px;">`;
         html += `<div style="font-weight:700;">${escapeHtml(line.name)}</div>`;
         html += `<div class="muted" style="line-height:1.7;">${escapeHtml(line.scripture)}</div>`;
+
+        // 如果是动爻且之卦存在，显示之卦对应爻辞
+        if (isMoving && data.relating && data.relating.lines && data.relating.lines[index]) {
+            const relatingLine = data.relating.lines[index];
+            html += `<div style="margin-top:8px; padding-left:10px; border-left:2px solid #09f; font-size:0.9em;">`;
+            html += `<div style="font-weight:600; color:#09f;">之卦 ${escapeHtml(relatingLine.name)}</div>`;
+            html += `<div class="muted">${escapeHtml(relatingLine.scripture)}</div>`;
+            html += `</div>`;
+        }
+
         html += `</div>`;
     });
+
     html += `</div>`;
     html += `</div>`;
 
