@@ -1,0 +1,18 @@
+# Django / Python
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+.env.*
+*.env
+
+# SQLite databases
+db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+
+# User uploads / local data
+media/
+uploads/
+*.log
