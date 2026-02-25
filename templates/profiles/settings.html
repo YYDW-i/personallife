@@ -2,11 +2,42 @@
 {% block title %}Settings · LocalLife{% endblock %}
 
 {% block content %}
+  <style>
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 2s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="loader"></div>
+  </div>
+
   <section class="glass card">
     <div class="card-title">Settings</div>
     <div class="card-subtitle">填写后 Dashboard 会显示健康摘要</div>
 
-    <form method="post" class="form">
+    <form method="post" class="form" id="settingsForm">
       {% csrf_token %}
       <label for="height">身高 (cm):</label>
       <input type="number" name="height_cm" id="height" value="{{ form.height_cm.value|default_if_none:'' }}" placeholder="例如180" required><br>
@@ -28,4 +59,22 @@
       <button type="submit">保存</button>
     </form>
   </section>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('settingsForm');
+      const overlay = document.getElementById('loaderOverlay');
+      
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          // 仅当表单通过 HTML5 验证时才显示加载动画
+          if (form.checkValidity()) {
+            overlay.style.display = 'flex';
+            // 禁用提交按钮，防止重复点击
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+          }
+        });
+      }
+    });
+  </script>
 {% endblock %}
