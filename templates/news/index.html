@@ -26,7 +26,7 @@
       {% for e in brief.entries.all %}
         <div class="glass" style="padding:14px; border-radius:16px;">
           <div style="font-weight:700; margin-bottom:6px;">{{ e.title }}</div>
-          <div class="muted" style="line-height:1.7;">{{ e.summary }}</div>
+          <div class="muted" style="line-height:1.7;">{{ e.summary}}</div>
           <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
             <span class="muted" style="font-size:12px;">来源：{{ e.source_name }}</span>
             <a class="btn subtle" href="{{ e.url }}" target="_blank" rel="noreferrer">打开原文</a>

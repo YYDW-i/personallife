@@ -3,7 +3,7 @@ import re
 
 from django.conf import settings
 from news.models import NewsItem
-
+from news.utils import clean_news_summary
 
 _SENT_SPLIT = re.compile(r"(?<=[。！？!?\.])\s+")
 
@@ -39,12 +39,15 @@ def callable_summary(text: str, lang: str) -> str:
 def summarize_item(item: NewsItem, lang: str) -> str:
     lang = (lang or "zh").strip()
 
-    # cache
+    # 缓存
     cached = (item.ai_summaries or {}).get(lang)
     if cached:
         return cached
 
+    # 获取原始文本并清洗
     base_text = item.content_text or item.rss_summary or item.title
+    base_text = clean_news_summary(base_text)   # ← 关键：清洗
+
     backend = getattr(settings, "NEWS_SUMMARY_BACKEND", "fallback")
 
     if backend == "callable":
@@ -53,8 +56,10 @@ def summarize_item(item: NewsItem, lang: str) -> str:
         summary = fallback_summary(base_text, lang)
 
     if not summary:
-        summary = fallback_summary(item.rss_summary or item.title, lang)
+        # 保底：再清洗一次标题或 rss_summary（其实上面已经用了）
+        summary = fallback_summary(clean_news_summary(item.rss_summary or item.title), lang)
 
+    # 存入缓存
     item.ai_summaries = {**(item.ai_summaries or {}), lang: summary}
     item.save(update_fields=["ai_summaries"])
     return summary
