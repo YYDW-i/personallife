@@ -41,6 +41,5 @@ def refresh_today(request):
         # 判断是否为 AJAX 请求（通过请求头 X-Requested-With）
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({"success": True, "new_count": new_count})
-        messages.success(request, f"抓取了 {new_count} 条新新闻，简报已刷新")
         return redirect("news:index")
     return redirect("news:index")
