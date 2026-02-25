@@ -3,35 +3,43 @@
 
 {% block content %}
   <style>
-    .loader-overlay {
-      position: fixed;
+    .glass.card {
+      position: relative;  /* 为内部绝对定位遮罩提供参照 */
+    }
+    .form-overlay {
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(2px);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      flex-direction: column;
+      z-index: 10;
+      border-radius: inherit; /* 保持和卡片一致的圆角 */
     }
     .loader {
-      border: 8px solid #f3f3f3;
-      border-top: 8px solid #3498db;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      animation: spin 2s linear infinite;
+      width: 50px;
+      height: 50px;
+      animation: spin 1.5s linear infinite;
+      margin-bottom: 10px;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    .form-overlay p {
+      color: #333;
+      font-weight: 500;
+      margin: 0;
+    }
   </style>
-
-  <div class="loader-overlay" id="loaderOverlay">
-    <div class="loader"></div>
-  </div>
 
   <section class="glass card">
     <div class="card-title">Settings</div>
@@ -58,18 +66,24 @@
 
       <button type="submit">保存</button>
     </form>
+
+    <div class="form-overlay" id="formOverlay">
+      <div class="loader"></div>
+      <p>处理中，请稍候...</p>
+    </div>
+
   </section>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('settingsForm');
-      const overlay = document.getElementById('loaderOverlay');
+      const overlay = document.getElementById('formOverlay');
       
       if (form) {
         form.addEventListener('submit', function(e) {
-          // 仅当表单通过 HTML5 验证时才显示加载动画
+          // 仅当表单通过浏览器原生验证后才显示遮罩
           if (form.checkValidity()) {
-            overlay.style.display = 'flex';
-            // 禁用提交按钮，防止重复点击
+            overlay.style.display = 'flex';   // 显示遮罩
+            // 可选：禁用提交按钮，防止二次点击
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) submitBtn.disabled = true;
           }
