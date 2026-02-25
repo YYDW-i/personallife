@@ -7,6 +7,7 @@ from news.models import UserNewsPreference, DailyBrief
 from news.services.brief import build_brief_for_user
 from news.services.fetcher import fetch_all_sources
 from django.contrib import messages
+from django.http import JsonResponse
 
 @login_required
 def index(request):
@@ -36,7 +37,10 @@ def preferences(request):
 def refresh_today(request):
     if request.method == "POST":
         new_count = fetch_all_sources()
-    # 手动刷新：立即为当前用户生成一次今日简报
         build_brief_for_user(request.user, date=timezone.localdate())
+        # 判断是否为 AJAX 请求（通过请求头 X-Requested-With）
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({"success": True, "new_count": new_count})
         messages.success(request, f"抓取了 {new_count} 条新新闻，简报已刷新")
+        return redirect("news:index")
     return redirect("news:index")

@@ -10,13 +10,32 @@
     </div>
     <div class="cal-actions">
       <a class="btn subtle" href="{% url 'news:preferences' %}">偏好设置</a>
-      <form method="POST" action="{% url 'news:refresh_today' %}">
+      <form method="POST" action="{% url 'news:refresh_today' %}" id="refresh-form">
         {% csrf_token %}
         <button type="submit" class="btn">刷新今日简报</button>
       </form>
     </div>
   </div>
+  <!-- 加载遮罩，默认隐藏 -->
+  <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white;">
+      <div class="spinner"></div>
+      <div style="margin-top:10px;">正在刷新新闻，请稍候...</div>
+  </div>
 
+  <style>
+  .spinner {
+      border: 4px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top: 4px solid #fff;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
+  </style>
   {% if not brief %}
     <div class="muted" style="margin-top:14px;">
       还没有生成今日简报。你可以点击“刷新今日简报”，或等待系统每日自动生成。
@@ -36,4 +55,48 @@
     </div>
   {% endif %}
 </section>
+<script>
+(function() {
+    const form = document.getElementById('refresh-form');
+    if (!form) return;
+
+    const overlay = document.getElementById('loading-overlay');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault(); // 阻止默认提交
+
+        // 显示加载遮罩
+        overlay.style.display = 'flex';
+
+        const formData = new FormData(form);
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest', // 标记为 AJAX 请求
+                },
+                credentials: 'same-origin'
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // 刷新成功后，重新加载页面以显示最新简报
+                    window.location.reload();
+                } else {
+                    alert('刷新失败，请稍后重试');
+                    overlay.style.display = 'none';
+                }
+            } else {
+                alert('网络错误');
+                overlay.style.display = 'none';
+            }
+        } catch (err) {
+            console.error(err);
+            alert('发生错误');
+            overlay.style.display = 'none';
+        }
+    });
+})();
+</script>
 {% endblock %}
