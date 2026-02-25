@@ -13,3 +13,5 @@ trafilatura>=1.0                    # 网页内容提取（新闻模块）
 beautifulsoup4>=4.12              # HTML解析（新闻模块）
 lxml>=5.4                       # XML解析（新闻模块）
 pillow>=10.0                    # 图像处理（2D/3D作图）
+cnlunar>=0.2.0                   # 农历转换（节日提醒）
+lunardate>=0.2.0                  # 阴历日期处理（节日提醒）
