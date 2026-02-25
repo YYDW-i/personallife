@@ -18,8 +18,11 @@
   </div>
   <!-- 加载遮罩，默认隐藏 -->
   <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white;">
-      <div class="spinner"></div>
-      <div style="margin-top:10px;">正在刷新新闻，请稍候...</div>
+      <div style="width:300px; background:#333; border-radius:10px; overflow:hidden;">
+          <div id="progress-bar" style="width:0%; height:20px; background:#4caf50; transition:width 0.2s;"></div>
+      </div>
+      <div style="margin-top:10px;">正在刷新新闻 <span id="progress-percent">0%</span></div>
+      <div style="margin-top:5px; font-size:14px; opacity:0.8;">请稍候...</div>
   </div>
 
   <style>
@@ -61,12 +64,64 @@
     if (!form) return;
 
     const overlay = document.getElementById('loading-overlay');
+    const progressBar = document.getElementById('progress-bar');
+    const percentText = document.getElementById('progress-percent');
+    let progressInterval = null;
+    let currentProgress = 0;
+
+    // 开始进度条动画
+    function startProgress() {
+        currentProgress = 0;
+        progressBar.style.width = '0%';
+        percentText.textContent = '0%';
+        overlay.style.display = 'flex';
+
+        // 模拟进度增长，每100ms增加1%，到90%后停止
+        progressInterval = setInterval(() => {
+            if (currentProgress < 90) {
+                currentProgress += 1;
+                progressBar.style.width = currentProgress + '%';
+                percentText.textContent = currentProgress + '%';
+            } else {
+                // 达到90%后暂停增长
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }, 1000);
+    }
+
+    // 结束进度条（成功或失败）
+    function finishProgress(success = true) {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+        // 瞬间完成到100%
+        currentProgress = 100;
+        progressBar.style.width = '100%';
+        percentText.textContent = '100%';
+
+        if (success) {
+            // 稍后刷新页面
+            setTimeout(() => {
+                window.location.reload();
+            }, 300);
+        } else {
+            // 失败时短暂显示后隐藏遮罩
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                // 重置进度条以备下次使用
+                progressBar.style.width = '0%';
+                percentText.textContent = '0%';
+            }, 1000);
+        }
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); // 阻止默认提交
 
-        // 显示加载遮罩
-        overlay.style.display = 'flex';
+        // 开始进度条
+        startProgress();
 
         const formData = new FormData(form);
         try {
@@ -74,27 +129,26 @@
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest', // 标记为 AJAX 请求
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin'
             });
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    // 刷新成功后，重新加载页面以显示最新简报
-                    window.location.reload();
+                    finishProgress(true); // 成功，刷新页面
                 } else {
                     alert('刷新失败，请稍后重试');
-                    overlay.style.display = 'none';
+                    finishProgress(false);
                 }
             } else {
                 alert('网络错误');
-                overlay.style.display = 'none';
+                finishProgress(false);
             }
         } catch (err) {
             console.error(err);
             alert('发生错误');
-            overlay.style.display = 'none';
+            finishProgress(false);
         }
     });
 })();
