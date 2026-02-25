@@ -13,12 +13,12 @@ TOPICS = [
 ]
 
 SOURCES = [
-    ("央视新闻-时政", "https://rsshub.app/cctv/china", "zh", "CN", ["politics"]),
-    ("央视新闻-国际", "https://rsshub.app/cctv/world", "zh", "CN", ["world"]),
-    ("央视新闻-财经", "https://rsshub.app/cctv/society", "zh", "CN", ["finance"]),
-    ("央视新闻-科技", "https://rsshub.app/cctv/tech", "zh", "CN", ["tech"]),
-    ("央视新闻-教育", "https://rsshub.app/cctv/edu", "zh", "CN", ["sports"]),
-    ("央视新闻-娱乐", "https://rsshub.app/cctv/ent", "zh", "CN", ["entertainment"]),
+    ("央视新闻-时政", "https://rsshub.rssforever.com/cctv/china", "zh", "CN", ["politics"]),
+    ("央视新闻-国际", "https://rsshub.rssforever.com/cctv/world", "zh", "CN", ["world"]),
+    ("央视新闻-财经", "https://rsshub.rssforever.com/cctv/society", "zh", "CN", ["finance"]),
+    ("央视新闻-科技", "https://rsshub.rssforever.com/cctv/tech", "zh", "CN", ["tech"]),
+    ("央视新闻-教育", "https://rsshub.rssforever.com/cctv/edu", "zh", "CN", ["sports"]),
+    ("央视新闻-娱乐", "https://rsshub.rssforever.com/cctv/ent", "zh", "CN", ["entertainment"]),
 
     ("BBC-Technology", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/technology/rss.xml", "en", "INTER", ["tech"]),
     ("BBC-Business", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/business/rss.xml", "en", "INTER", ["finance"]),
