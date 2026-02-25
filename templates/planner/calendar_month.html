@@ -41,7 +41,15 @@
                 +
               </a>
             </div>
-
+            
+            <!-- 新增：显示节日/节气 -->
+            {% if cell.events %}
+                <div class="cal-events">
+                    {% for event in cell.events %}
+                        <span class="event-tag">{{ event }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
             <div class="cal-items">
               {% for t in cell.tasks|slice:":3" %}
                 <a class="cal-item {% if t.status == 'DONE' %}done{% endif %}"

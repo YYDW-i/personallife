@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from tasks.models import Task
 
+from .holidays import get_day_events
+
 
 def _month_range(year: int, month: int):
     """返回 [month_start, month_end) 的 tz-aware datetime"""
@@ -83,6 +85,7 @@ def calendar_month(request, year=None, month=None):
     for week in cal.monthdatescalendar(year, month):
         row = []
         for d in week:
+            events = get_day_events(d)
             row.append({
                 "date": d,
                 "date_str": d.isoformat(),
@@ -90,6 +93,7 @@ def calendar_month(request, year=None, month=None):
                 "in_month": (d.month == month),
                 "is_today": (d == today),
                 "tasks": day_tasks.get(d.isoformat(), []),  # 任务按日期分组
+                "events": events,
             })
         weeks.append(row)
 
