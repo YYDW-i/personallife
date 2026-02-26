@@ -6,13 +6,13 @@ import hashlib
 from django.utils import timezone
 
 def make_signature(profile: HealthProfile) -> str:
-    raw = f"{profile.height_cm}|{profile.weight_kg}|{profile.age_year}|{profile.gender}"
+    raw = f"{profile.height_cm}|{profile.weight_kg}|{profile.age_year}|{profile.gender}|{profile.exercise_frequency}|{profile.exercise_time_minutes}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 @login_required
 def dashboard(request):
     profile = HealthProfile.objects.filter(user=request.user).first()
-    has_basic = (profile is not None and profile.height_cm is not None and profile.weight_kg is not None and profile.age_year is not None)
+    has_basic = (profile is not None and profile.height_cm is not None and profile.weight_kg is not None and profile.age_year is not None and profile.exercise_frequency is not None and profile.exercise_time_minutes is not None)
     
     ai_summary = ""
     ai_status = ""
@@ -29,8 +29,10 @@ def dashboard(request):
             weight = profile.weight_kg
             age = profile.age_year
             gender=profile.gender
+            exercise_frequency = profile.exercise_frequency
+            exercise_time_minutes = profile.exercise_time_minutes
             prompt = (
-                f"用户身高：{height} cm，体重：{weight} kg，年龄：{age} 岁。性别（男：M女：F）：{gender}"
+                f"用户身高：{height} cm，体重：{weight} kg，年龄：{age} 岁，性别（男：M女：F）：{gender}，运动频率（次/周）：{exercise_frequency}，运动时间（分钟/次）：{exercise_time_minutes}。"
                 "请根据这些数据生成一份针对用户个性化详细的健康分析报告，"
                 "综合用户的这些信息，包括 BMI 指标解释、是否存在超重或偏瘦风险、"
                 "建议的生活习惯改善措施等。"

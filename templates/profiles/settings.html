@@ -57,17 +57,30 @@
       color: rgba(255, 255, 255, 0.4);
     }
 
-    /* 右侧补充说明卡片 - 基础样式 */
+    /* 右侧列容器：垂直排列 */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* 年龄和性别并排行 */
+    .row-fields {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .row-fields .form-group {
+      flex: 1;  /* 两个字段各占一半宽度 */
+    }
+
+    /* 信息卡片 */
     .info-card {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 16px;
-      padding: 1.2rem 1.2rem;
+      padding: 1.2rem;
       border-left: 4px solid #4a9eff;
-      height: fit-content;
       backdrop-filter: blur(4px);
-      /* 默认位于第二列，跨两行 */
-      grid-column: 2;
-      grid-row: span 2;
     }
 
     .info-card p {
@@ -109,16 +122,18 @@
       transform: scale(0.98);
     }
 
-    /* 移动端：改为单列，重置 info-card 的网格位置 */
+    /* 移动端：改为单列 */
     @media (max-width: 700px) {
       .form-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
       }
-      .info-card {
-        grid-column: auto;   /* 取消固定列位置 */
-        grid-row: auto;      /* 取消固定行跨距 */
-        margin-top: 0.5rem;
+      .right-column {
+        gap: 1rem;
+      }
+      .row-fields {
+        flex-direction: column;  /* 小屏幕上年龄和性别也改为上下排列 */
+        gap: 1rem;
       }
     }
 
@@ -166,7 +181,7 @@
       {% csrf_token %}
 
       <div class="form-grid">
-        <!-- 左侧列：身高 + 体重 -->
+        <!-- 左侧列：身高、体重各占一行 -->
         <div class="form-group">
           <label for="height">身高 (cm)</label>
           <input type="number" name="height_cm" id="height"
@@ -181,31 +196,48 @@
                  placeholder="例如 50" required>
         </div>
 
-        <!-- 右侧列：年龄 + 性别 + 信息卡片 -->
         <div class="form-group">
-          <label for="age">年龄</label>
-          <input type="number" name="age_year" id="age"
-                 value="{{ form.age_year.value|default_if_none:'' }}"
-                 placeholder="例如 20" required>
+          <label for="exercise_frequency">运动频率 (次/周)</label>
+          <input type="number" name="exercise_frequency" id="exercise_frequency"
+                 value="{{ form.exercise_frequency.value|default_if_none:'' }}"
+                 placeholder="例如 3" required>
         </div>
 
         <div class="form-group">
-          <label for="gender">性别</label>
-          <select name="gender" id="gender" required>
-            <option value="" disabled {% if not form.gender.value %}selected{% endif %}>请选择</option>
-            <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>男</option>
-            <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>女</option>
-          </select>
+          <label for="exercise_time_minutes">运动时间（分钟/次）</label>
+          <input type="number" name="exercise_time_minutes" id="exercise_time_minutes"
+                 value="{{ form.exercise_time_minutes.value|default_if_none:'' }}"
+                 placeholder="例如 30" required>
         </div>
 
-        <!-- 信息卡片（不再使用内联样式） -->
-        <div class="info-card">
-          <p>
-            <span class="info-icon">✨</span>
-            <strong>您的健康报告</strong>
-          </p>
-          <p>根据您提供的身高、体重、年龄和性别，AI 将为您生成个性化的健康分析报告，包括 BMI 评估、风险提示及生活习惯建议。</p>
-          <p style="margin-top: 0.8rem; opacity: 0.8;">所有数据仅用于本次服务，请放心填写。</p>
+        <!-- 右侧列：年龄性别并排 + 信息卡片 -->
+        <div class="right-column">
+          <div class="row-fields">
+            <div class="form-group">
+              <label for="age">年龄</label>
+              <input type="number" name="age_year" id="age"
+                     value="{{ form.age_year.value|default_if_none:'' }}"
+                     placeholder="例如 20" required>
+            </div>
+
+            <div class="form-group">
+              <label for="gender">性别</label>
+              <select name="gender" id="gender" required>
+                <option value="" disabled {% if not form.gender.value %}selected{% endif %}>请选择</option>
+                <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>男</option>
+                <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>女</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <p>
+              <span class="info-icon">✨</span>
+              <strong>您的健康报告</strong>
+            </p>
+            <p>根据您提供的身高、体重、年龄和性别，AI 将为您生成个性化的健康分析报告，包括 BMI 评估、风险提示及生活习惯建议。</p>
+            <p style="margin-top: 0.8rem; opacity: 0.8;">所有数据仅用于本次服务，请放心填写。</p>
+          </div>
         </div>
       </div>
 

@@ -6,6 +6,8 @@ class HealthProfile(models.Model):
     height_cm = models.DecimalField(max_digits=5, decimal_places=2,null=True, blank=True)
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     age_year=models.IntegerField(null=True,blank=True)
+    exercise_frequency=models.IntegerField(null=True,blank=True) # 每周运动几次
+    exercise_time_minutes=models.IntegerField(null=True,blank=True) # 每次运动多少分钟
     updated_at = models.DateTimeField(auto_now=True)
    
     GENDER_CHOICES = [
