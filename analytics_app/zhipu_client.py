@@ -60,6 +60,34 @@ def zhipu_interpret_optional(
         return {
             "error": "未配置 ZHIPU_API_KEY（环境变量）。已跳过 AI 解读。",
         }
+    # 提取本卦卦辞和爻辞
+    primary_scripture = primary.get("scripture", "")
+    primary_lines = primary.get("lines", [])  # 列表，每项包含 name, scripture, type
+
+    # 提取之卦卦辞和爻辞（如果有）
+    relating_scripture = relating.get("scripture", "") if relating else None
+    relating_lines = relating.get("lines", []) if relating else None
+
+    # 构造动爻信息：本卦动爻爻辞 + 之卦对应动爻爻辞
+    moving_info = []
+    for idx in moving_lines:
+        line_idx = idx - 1  # 列表索引从0开始
+        if line_idx < len(primary_lines):
+            primary_line = primary_lines[line_idx]
+            moving_info.append({
+                "position": primary_line["name"],
+                "original": primary_line["scripture"],
+                "type": "本卦动爻"
+            })
+        if relating_lines and line_idx < len(relating_lines):
+            relating_line = relating_lines[line_idx]
+            moving_info.append({
+                "position": relating_line["name"],
+                "original": relating_line["scripture"],
+                "type": "之卦动爻"
+            })
+
+    # 构造发送给 AI 的用户数据结构
 
     sys = (
         "你是一个以《周易》为文化背景的解读助手。"
@@ -75,23 +103,29 @@ def zhipu_interpret_optional(
             "name": primary.get("name"),
             "symbol": primary.get("symbol"),
             "scripture": primary.get("scripture"),
+            "all_lines": [{"name": l["name"], "text": l["scripture"]} for l in primary_lines],
         },
         "relating": None if not relating else {
             "name": relating.get("name"),
             "symbol": relating.get("symbol"),
             "scripture": relating.get("scripture"),
+            "all_lines": [{"name": l["name"], "text": l["scripture"]} for l in relating_lines],
         },
         "moving_lines": moving_lines,
+        "moving_details": moving_info, 
         "requirements": [
-            "不要逐字复述或改写爻辞原文",
-            "用文化/象征角度给出反思与行动建议",
-            "避免任何暴力、自残、违法、露骨等内容"
+            "请翻译以下内容：本卦卦辞、本卦动爻爻辞、之卦卦辞、之卦动爻爻辞（如果有）。",
+            "翻译要简洁现代，保留原意。",
+            "结合本卦和之卦的整体象征，给出 3-6 条可执行的行动建议，与用户问题相关。",
+            "列举 1-2 个与卦象相关的历史典故（每条含 title, content, source 可空，如果有之卦也要加上之卦的典故）。",
+            "最后加一句免责声明。",
+            "避免任何暴力、自残、违法、露骨内容。"
             "如果用户填写了问题（question 字段），必须在提完建议后给出用户问题的答案**"
         ],
         "schema": {
-            "translation": "把卦辞+动爻爻辞翻成现代汉语（简洁）",
-            "interpretation": "结合用户问题给出 3-6 条可执行建议（列表）",
-            "anecdotes": "与卦象结果相关的典故（列表，每条含 title, content, source 可空）",
+            "translation": "一段综合译文，包含本卦卦辞、本卦动爻爻辞、之卦卦辞、之卦动爻爻辞的现代汉语翻译。",
+            "interpretation": "结合用户问题的 3-6 条建议（列表）",
+            "anecdotes": "与卦象相关的典故（列表，每条含 title, content, source 可空）",
             "disclaimer": "一句免责声明"
         }
     }
