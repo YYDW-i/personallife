@@ -8,6 +8,8 @@ class HealthProfile(models.Model):
     age_year=models.IntegerField(null=True,blank=True)
     exercise_frequency=models.IntegerField(null=True,blank=True) # 每周运动几次
     exercise_time_minutes=models.IntegerField(null=True,blank=True) # 每次运动多少分钟
+    sleep_hours=models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True) # 每晚平均睡眠多少小时
+
     updated_at = models.DateTimeField(auto_now=True)
    
     GENDER_CHOICES = [

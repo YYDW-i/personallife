@@ -210,6 +210,13 @@
                  placeholder="例如 30" required>
         </div>
 
+        <div class="form-group">
+          <label for="sleep_hours">近期平均睡眠时间（小时）</label>
+          <input type="number" name="sleep_hours" id="sleep_hours"
+                 value="{{ form.sleep_hours.value|default_if_none:'' }}"
+                 placeholder="例如 7" required>
+        </div>
+
         <!-- 右侧列：年龄性别并排 + 信息卡片 -->
         <div class="right-column">
           <div class="row-fields">
