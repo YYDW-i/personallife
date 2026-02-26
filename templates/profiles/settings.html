@@ -5,10 +5,9 @@
   <style>
     /* ===== 扩展表单样式，适配两栏布局 ===== */
     .glass.card {
-      position: relative;  /* 遮罩定位基准 */
+      position: relative;
     }
 
-    /* 自定义 settings 表单容器 —— 不使用原有的 .form 限制宽度 */
     .settings-form {
       margin-top: 1.5rem;
       display: flex;
@@ -20,10 +19,9 @@
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 2rem 2.5rem;          /* 行列间距 */
+      gap: 2rem 2.5rem;
     }
 
-    /* 每个表单项组 */
     .form-group {
       display: flex;
       flex-direction: column;
@@ -59,7 +57,7 @@
       color: rgba(255, 255, 255, 0.4);
     }
 
-    /* 右侧补充说明卡片 */
+    /* 右侧补充说明卡片 - 基础样式 */
     .info-card {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 16px;
@@ -67,6 +65,9 @@
       border-left: 4px solid #4a9eff;
       height: fit-content;
       backdrop-filter: blur(4px);
+      /* 默认位于第二列，跨两行 */
+      grid-column: 2;
+      grid-row: span 2;
     }
 
     .info-card p {
@@ -83,9 +84,8 @@
       opacity: 0.9;
     }
 
-    /* 提交按钮 */
     .submit-btn {
-      grid-column: 1 / -1;        /* 跨两列 */
+      grid-column: 1 / -1;
       justify-self: center;
       padding: 0.9rem 3rem;
       font-size: 1.2rem;
@@ -109,13 +109,15 @@
       transform: scale(0.98);
     }
 
-    /* 移动端：改为单列 */
+    /* 移动端：改为单列，重置 info-card 的网格位置 */
     @media (max-width: 700px) {
       .form-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
       }
       .info-card {
+        grid-column: auto;   /* 取消固定列位置 */
+        grid-row: auto;      /* 取消固定行跨距 */
         margin-top: 0.5rem;
       }
     }
@@ -163,7 +165,6 @@
     <form method="post" class="settings-form" id="settingsForm">
       {% csrf_token %}
 
-      <!-- 两栏网格区域 -->
       <div class="form-grid">
         <!-- 左侧列：身高 + 体重 -->
         <div class="form-group">
@@ -180,7 +181,7 @@
                  placeholder="例如 50" required>
         </div>
 
-        <!-- 右侧列：年龄 + 性别 + 信息卡片（填充右侧空白） -->
+        <!-- 右侧列：年龄 + 性别 + 信息卡片 -->
         <div class="form-group">
           <label for="age">年龄</label>
           <input type="number" name="age_year" id="age"
@@ -197,8 +198,8 @@
           </select>
         </div>
 
-        <!-- 右侧补充信息卡片（占据右侧一整列，增强视觉平衡） -->
-        <div class="info-card" style="grid-column: 2; grid-row: span 2;">
+        <!-- 信息卡片（不再使用内联样式） -->
+        <div class="info-card">
           <p>
             <span class="info-icon">✨</span>
             <strong>您的健康报告</strong>
@@ -208,11 +209,9 @@
         </div>
       </div>
 
-      <!-- 提交按钮（位于网格下方，居中） -->
       <button type="submit" class="submit-btn">保存</button>
     </form>
 
-    <!-- 遮罩层（完全保留原有功能） -->
     <div class="form-overlay" id="formOverlay">
       <div class="loader"></div>
       <p>处理中，请稍候...</p>
