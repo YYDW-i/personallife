@@ -3,9 +3,124 @@
 
 {% block content %}
   <style>
+    /* ===== 扩展表单样式，适配两栏布局 ===== */
     .glass.card {
-      position: relative;  /* 为内部绝对定位遮罩提供参照 */
+      position: relative;  /* 遮罩定位基准 */
     }
+
+    /* 自定义 settings 表单容器 —— 不使用原有的 .form 限制宽度 */
+    .settings-form {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* 两栏网格 */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem 2.5rem;          /* 行列间距 */
+    }
+
+    /* 每个表单项组 */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      border: 1px solid var(--stroke);
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .form-group input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* 右侧补充说明卡片 */
+    .info-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.2rem 1.2rem;
+      border-left: 4px solid #4a9eff;
+      height: fit-content;
+      backdrop-filter: blur(4px);
+    }
+
+    .info-card p {
+      margin: 0 0 0.5rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .info-icon {
+      font-size: 1.4rem;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+      opacity: 0.9;
+    }
+
+    /* 提交按钮 */
+    .submit-btn {
+      grid-column: 1 / -1;        /* 跨两列 */
+      justify-self: center;
+      padding: 0.9rem 3rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      border: 1px solid var(--stroke);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .submit-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* 移动端：改为单列 */
+    @media (max-width: 700px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .info-card {
+        margin-top: 0.5rem;
+      }
+    }
+
+    /* 原有遮罩样式保持不变 */
     .form-overlay {
       position: absolute;
       top: 0;
@@ -19,7 +134,7 @@
       align-items: center;
       flex-direction: column;
       z-index: 10;
-      border-radius: inherit; /* 保持和卡片一致的圆角 */
+      border-radius: inherit;
     }
     .loader {
       border: 6px solid #f3f3f3;
@@ -45,45 +160,74 @@
     <div class="card-title">Settings</div>
     <div class="card-subtitle">填写后 Dashboard 会显示健康摘要</div>
 
-    <form method="post" class="form" id="settingsForm">
+    <form method="post" class="settings-form" id="settingsForm">
       {% csrf_token %}
-      <label for="height">身高 (cm):</label>
-      <input type="number" name="height_cm" id="height" value="{{ form.height_cm.value|default_if_none:'' }}" placeholder="例如180" required><br>
 
-      <label for="weight">体重 (kg):</label>
-      <input type="number" name="weight_kg" id="weight" value="{{ form.weight_kg.value|default_if_none:'' }}" placeholder="例如：50" required><br>
+      <!-- 两栏网格区域 -->
+      <div class="form-grid">
+        <!-- 左侧列：身高 + 体重 -->
+        <div class="form-group">
+          <label for="height">身高 (cm)</label>
+          <input type="number" name="height_cm" id="height"
+                 value="{{ form.height_cm.value|default_if_none:'' }}"
+                 placeholder="例如 180" required>
+        </div>
 
-      <label for="age">年龄:</label>
-      <input type="number" name="age_year" id="age" value="{{ form.age_year.value|default_if_none:'' }}" placeholder="例如：20" required><br>
-      
-      <label for="gender">性别:</label>
-      <select name="gender" id="gender" required>
-        <option value="" disabled {% if not form.gender.value %}selected{% endif %}>请选择</option>
-        <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>男</option>
-        <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>女</option>
-      </select><br>
+        <div class="form-group">
+          <label for="weight">体重 (kg)</label>
+          <input type="number" name="weight_kg" id="weight"
+                 value="{{ form.weight_kg.value|default_if_none:'' }}"
+                 placeholder="例如 50" required>
+        </div>
 
+        <!-- 右侧列：年龄 + 性别 + 信息卡片（填充右侧空白） -->
+        <div class="form-group">
+          <label for="age">年龄</label>
+          <input type="number" name="age_year" id="age"
+                 value="{{ form.age_year.value|default_if_none:'' }}"
+                 placeholder="例如 20" required>
+        </div>
 
-      <button type="submit">保存</button>
+        <div class="form-group">
+          <label for="gender">性别</label>
+          <select name="gender" id="gender" required>
+            <option value="" disabled {% if not form.gender.value %}selected{% endif %}>请选择</option>
+            <option value="M" {% if form.gender.value == "M" %}selected{% endif %}>男</option>
+            <option value="F" {% if form.gender.value == "F" %}selected{% endif %}>女</option>
+          </select>
+        </div>
+
+        <!-- 右侧补充信息卡片（占据右侧一整列，增强视觉平衡） -->
+        <div class="info-card" style="grid-column: 2; grid-row: span 2;">
+          <p>
+            <span class="info-icon">✨</span>
+            <strong>您的健康报告</strong>
+          </p>
+          <p>根据您提供的身高、体重、年龄和性别，AI 将为您生成个性化的健康分析报告，包括 BMI 评估、风险提示及生活习惯建议。</p>
+          <p style="margin-top: 0.8rem; opacity: 0.8;">所有数据仅用于本次服务，请放心填写。</p>
+        </div>
+      </div>
+
+      <!-- 提交按钮（位于网格下方，居中） -->
+      <button type="submit" class="submit-btn">保存</button>
     </form>
 
+    <!-- 遮罩层（完全保留原有功能） -->
     <div class="form-overlay" id="formOverlay">
       <div class="loader"></div>
       <p>处理中，请稍候...</p>
     </div>
-
   </section>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('settingsForm');
       const overlay = document.getElementById('formOverlay');
-      
+
       if (form) {
         form.addEventListener('submit', function(e) {
-          // 仅当表单通过浏览器原生验证后才显示遮罩
           if (form.checkValidity()) {
-            overlay.style.display = 'flex';   // 显示遮罩
-            // 可选：禁用提交按钮，防止二次点击
+            overlay.style.display = 'flex';
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) submitBtn.disabled = true;
           }
