@@ -50,7 +50,7 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 ![alt text](image-4.png)
 
 ### ❤️ 健康仪表盘 (Dashboard)
-- 填写身高、体重、年龄、性别后，自动调用 AI 生成个性化健康分析报告
+- 填写身高、体重、年龄、性别、运动情况、睡眠时长等信息后，自动调用 AI 生成个性化健康分析报告
 - 包括 BMI 计算、风险提示、生活习惯建议
 - 结果缓存，避免重复调用 API
 
@@ -93,10 +93,6 @@ venv\Scripts\activate      # Windows
 ```
 pip install -r requirements.txt
 ```
-> 若没有 `requirements.txt`，可手动安装核心依赖：
-> ```
-> pip install django sympy matplotlib numpy openai feedparser requests
-> ```
 
 ### 4. 数据库迁移
 ```bash
