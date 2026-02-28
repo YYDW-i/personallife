@@ -102,7 +102,7 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
                 # parse_datetime 可能返回 naive；统一按当前时区处理
                 if timezone.is_naive(dt):
                     dt = timezone.make_aware(dt, timezone.get_current_timezone())
-                initial["due_at"] = timezone.localtime(dt).strftime("%Y-%m-%dT%H:%M")
+                initial["due_at"] = timezone.localtime(dt).strftime("%Y-%m-%d %H:%M")
         return initial
 
 
@@ -122,6 +122,16 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         obj.remind_at = compute_remind_at(obj)
         obj.save()
         return redirect(self.success_url)
+    def get_initial(self):
+        initial = super().get_initial()
+        task = self.object
+        if task.due_at:
+            initial["due_at"] = timezone.localtime(task.due_at).strftime("%Y-%m-%d %H:%M")
+        if task.window_start:
+            initial["window_start"] = timezone.localtime(task.window_start).strftime("%Y-%m-%d %H:%M")
+        if task.window_end:
+            initial["window_end"] = timezone.localtime(task.window_end).strftime("%Y-%m-%d %H:%M")
+        return initial
 
 
 class TaskDeleteView(LoginRequiredMixin, DeleteView):

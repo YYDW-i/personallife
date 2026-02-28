@@ -2,6 +2,23 @@
 {% block title %}编辑任务 · LocalLife{% endblock %}
 
 {% block content %}
+  {% block extra_head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  {% endblock %}
+
+  <!-- 在原有内容后面添加： -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      flatpickr(".datepicker", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",      // 与 placeholder 一致
+        time_24hr: true,
+        locale: "zh",                  // 可选，中文界面
+        allowInput: true                // 允许手动输入
+      });
+    });
+  </script>
   <section class="glass card">
     <div class="card-title">{% if object %}编辑任务{% else %}新建任务{% endif %}</div>
 
