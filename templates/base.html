@@ -57,5 +57,33 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  <script>
+  (function() {
+      // 如果当前已经是专注页，则不再轮询，防止循环跳转
+      if (window.location.pathname.startsWith('/tasks/focus/')) {
+          return;
+      }
+
+      const CHECK_INTERVAL = 5000; // 5秒检查一次
+      const endpoint = "{% url 'tasks:active_focus_api' %}";
+
+      async function checkFocus() {
+          try {
+              const resp = await fetch(endpoint, { credentials: 'same-origin' });
+              const data = await resp.json();
+              if (data.active && data.focus_url) {
+                  // 发现专注任务，立即跳转
+                  window.location.href = data.focus_url;
+              }
+          } catch (e) {
+              console.warn('专注状态检查失败', e);
+          }
+      }
+
+      // 立即执行一次，然后定时检查
+      checkFocus();
+      setInterval(checkFocus, CHECK_INTERVAL);
+  })();
+  </script>
 </body>
 </html>

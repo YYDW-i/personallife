@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy,reverse
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -11,6 +11,27 @@ from .models import Task
 from django.contrib.auth.decorators import login_required
 from .forms import TaskForm
 from django.utils.dateparse import parse_datetime
+
+
+def active_focus_api(request):
+    """返回当前正在进行的专注任务（如果有）"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'active': False})
+    now = timezone.now()
+    task = Task.objects.filter(
+        user=request.user,
+        status=Task.Status.TODO,
+        schedule_kind=Task.ScheduleKind.WINDOW,
+        window_start__lte=now,
+        window_end__gte=now
+    ).first()
+    if task:
+        return JsonResponse({
+            'active': True,
+            'task_id': task.id,
+            'focus_url': reverse('tasks:focus', args=[task.id])
+        })
+    return JsonResponse({'active': False})
 
 @login_required
 def focus_view(request, task_id):
