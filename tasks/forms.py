@@ -6,12 +6,6 @@ from .models import Task
 
 class TaskForm(forms.ModelForm):
     # 额外字段：相对时间段（持续分钟数）
-    duration_minutes = forms.IntegerField(
-        required=False,
-        min_value=1,
-        label="持续时长（分钟，可选）",
-        help_text="只在“时间段”模式下使用：填了就用 开始时间 + 持续分钟数 自动算结束时间。",
-    )
 
     class Meta:
         model = Task
@@ -33,7 +27,6 @@ class TaskForm(forms.ModelForm):
         due_at = cleaned.get("due_at")
         ws = cleaned.get("window_start")
         we = cleaned.get("window_end")
-        dur = cleaned.get("duration_minutes")
 
         remind_enabled = cleaned.get("remind_enabled")
         lead = cleaned.get("remind_lead_minutes") or 0
@@ -53,10 +46,6 @@ class TaskForm(forms.ModelForm):
         elif kind == Task.ScheduleKind.WINDOW:
             if not ws:
                 self.add_error("window_start", "选择“时间段”时必须填写开始时间。")
-            # 结束时间：优先用 window_end，否则用 duration_minutes 计算
-            if ws and not we and dur:
-                cleaned["window_end"] = ws + timedelta(minutes=dur)
-                we = cleaned["window_end"]
             if ws and not we:
                 self.add_error("window_end", "时间段需要填写结束时间，或填写“持续时长（分钟）”。")
             if ws and we and we <= ws:
