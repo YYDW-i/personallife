@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注模式 · {{ task.title }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1e2b3a 0%, #0f1a24 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: white;
+        }
+        .focus-card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 40px;
+            padding: 48px 40px;
+            max-width: 520px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .task-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: white;
+        }
+        .task-desc {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 32px;
+            border-bottom: 1px dashed rgba(255,255,255,0.2);
+            padding-bottom: 24px;
+        }
+        .countdown {
+            background: rgba(0,0,0,0.3);
+            border-radius: 60px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        .countdown-number {
+            font-size: 4rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 4px;
+            color: #ffd966;
+        }
+        .countdown-label {
+            font-size: 1rem;
+            opacity: 0.6;
+            margin-top: 8px;
+        }
+        .hint {
+            font-size: 0.95rem;
+            opacity: 0.5;
+            margin-top: 24px;
+        }
+        .hint i {
+            font-style: normal;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="focus-card">
+        <div class="task-title">{{ task.title }}</div>
+        {% if task.description %}
+            <div class="task-desc">{{ task.description }}</div>
+        {% endif %}
+
+        <div class="countdown">
+            <div class="countdown-number" id="timer">--:--</div>
+            <div class="countdown-label">剩余专注时间</div>
+        </div>
+
+        <div class="hint">
+            <i>专注期间无法使用其他功能，结束后自动返回</i>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const endStr = "{{ task.window_end|date:'c' }}";  // ISO 8601 格式
+            const endTime = new Date(endStr).getTime();
+
+            function updateTimer() {
+                const now = Date.now();
+                const diff = endTime - now;  // 毫秒
+
+                if (diff <= 0) {
+                    document.getElementById('timer').textContent = '00:00';
+                    // 时间到，跳回首页
+                    window.location.href = "{% url 'tasks:index' %}";
+                    return;
+                }
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        })();
+    </script>
+    <script>
+        window.REMINDER_ENDPOINT = "{% url 'tasks:reminders_api' %}";
+    </script>
+    <script src="{% static 'js/reminders.js' %}"></script>
+</body>
+</html>

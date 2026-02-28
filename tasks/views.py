@@ -1,15 +1,26 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 from .models import Task
+from django.contrib.auth.decorators import login_required
 from .forms import TaskForm
 from django.utils.dateparse import parse_datetime
+
+@login_required
+def focus_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    now = timezone.now()
+    # 如果当前不在时间段内（可能手动访问过期URL），则跳回首页
+    if now < task.window_start or now > task.window_end:
+        return redirect('tasks:index')
+    return render(request, 'tasks/focus.html', {'task': task})
+
 
 def compute_remind_at(task: Task):
     """
