@@ -3,7 +3,7 @@
 
 {% block content %}
 <style>
-  .spinner {
+    .spinner {
     border: 4px solid rgba(0,0,0,0.1);
     border-left-color: #09f;
     border-radius: 50%;
@@ -11,10 +11,47 @@
     height: 40px;
     animation: spin 1s linear infinite;
     display: inline-block;
-  }
-  @keyframes spin {
-      to { transform: rotate(360deg); }
-  }
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+  /* 3D 硬币容器 */
+    .coin-flip {
+        width: 2.4rem;
+        height: 2.4rem;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.3s ease-out;
+        cursor: default;
+    }
+    .coin-flip.flipping {
+        animation: flip 0.6s infinite linear;
+    }
+    @keyframes flip {
+        0% { transform: rotateY(0deg); }
+        100% { transform: rotateY(360deg); }
+    }
+    .coin-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        border-radius: 50%;
+        background: #f7e7b4;        /* 金色 */
+        color: #b8860b;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .coin-face.back {
+        transform: rotateY(180deg);
+    }
+    /* 爻卡片间距 */
+    .line-card {
+        margin-bottom: 16px;
+    }
 </style>
 <section class="glass card">
   <div class="card-title">卦象分析</div>
@@ -100,9 +137,8 @@ function renderResult(data) {
         html += `<div class="muted">问题：${escapeHtml(data.question)}</div>`;
     }
 
-    // 本卦与之卦的左右布局
-    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">`;
-
+    // 本卦与之卦左右布局（保持不变）
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0;">`;
     // 本卦
     html += `<div class="glass" style="padding:14px; border-radius:16px;">`;
     html += `<div style="font-weight:800;">本卦：${escapeHtml(data.primary.name)} ${escapeHtml(data.primary.symbol)}</div>`;
@@ -115,8 +151,7 @@ function renderResult(data) {
     } else {
         html += `<div class="muted" style="margin-top:8px;">无动爻</div>`;
     }
-    html += `</div>`; // 结束本卦
-
+    html += `</div>`;
     // 之卦
     html += `<div class="glass" style="padding:14px; border-radius:16px;">`;
     if (data.relating) {
@@ -128,93 +163,180 @@ function renderResult(data) {
     } else {
         html += `<div class="muted">无之卦（因为无动爻）</div>`;
     }
-    html += `</div>`; // 结束之卦
-    html += `</div>`; // 结束 grid
+    html += `</div>`;
+    html += `</div>`;
 
-    // 爻辞列表（本卦 + 动爻对应的之卦爻辞）
-    html += `<div style="margin-top:16px;">`;
-    html += `<div style="font-weight:800; margin-bottom:8px;">爻辞解读</div>`;
-    html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+    // 爻辞容器（用于放置动画生成的爻卡片）
+    html += `<div id="lines-animation-container" style="margin-top:16px;"></div>`;
 
-    // 遍历本卦六爻
-    data.primary.lines.forEach((line, index) => {
-        const lineNumber = index + 1; // 爻位从1开始
+    // 占位：AI 部分稍后动态追加
+    html += `<div id="ai-section-placeholder"></div>`;
+    html += `</section>`;
+
+    document.getElementById('result-container').innerHTML = html;
+
+    // ---------- 开始逐爻动画 ----------
+    const container = document.getElementById('lines-animation-container');
+    container.innerHTML = ''; // 清空
+
+    // 遍历六爻，为每一爻创建卡片，但先不填充结果
+    for (let i = 0; i < data.primary.lines.length; i++) {
+        const line = data.primary.lines[i];
+        const lineNumber = i + 1;
         const isMoving = data.moving_lines && data.moving_lines.includes(lineNumber);
 
-        html += `<div class="glass" style="padding:12px; border-radius:14px;">`;
-        html += `<div style="font-weight:700;">${escapeHtml(line.name)}</div>`;
-        html += `<div class="muted" style="line-height:1.7;">${escapeHtml(line.scripture)}</div>`;
+        // 爻卡片外层
+        const card = document.createElement('div');
+        card.className = 'glass line-card';
+        card.style.padding = '14px';
+        card.style.borderRadius = '16px';
+        card.dataset.index = i;
 
-        // 如果是动爻且之卦存在，显示之卦对应爻辞
-        if (isMoving && data.relating && data.relating.lines && data.relating.lines[index]) {
-            const relatingLine = data.relating.lines[index];
-            html += `<div style="margin-top:8px; padding-left:10px; border-left:2px solid #09f; font-size:0.9em;">`;
-            html += `<div style="font-weight:600; color:#09f;">之卦 ${escapeHtml(relatingLine.name)}</div>`;
-            html += `<div class="muted">${escapeHtml(relatingLine.scripture)}</div>`;
+        // 硬币行
+        const coinRow = document.createElement('div');
+        coinRow.style.display = 'flex';
+        coinRow.style.gap = '10px';
+        coinRow.style.marginBottom = '10px';
+
+        // 为每个硬币创建3D容器
+        for (let j = 0; j < 3; j++) {
+            const coinResult = data.coin_results[i][j]; // 2 或 3
+            const coin = document.createElement('div');
+            coin.className = 'coin-flip flipping'; // 立即开始翻转
+            coin.dataset.result = coinResult;
+            coin.innerHTML = `
+                <div class="coin-face front">●</div>
+                <div class="coin-face back">○</div>
+            `;
+            coinRow.appendChild(coin);
+        }
+        card.appendChild(coinRow);
+
+        // 爻名
+        const nameDiv = document.createElement('div');
+        nameDiv.style.fontWeight = '700';
+        nameDiv.textContent = line.name;
+        card.appendChild(nameDiv);
+
+        // 爻辞
+        const scriptureDiv = document.createElement('div');
+        scriptureDiv.className = 'muted';
+        scriptureDiv.style.lineHeight = '1.7';
+        scriptureDiv.textContent = line.scripture;
+        card.appendChild(scriptureDiv);
+
+        // 如果动爻且之卦存在，预留之卦爻辞位置（稍后填充）
+        if (isMoving && data.relating && data.relating.lines && data.relating.lines[i]) {
+            const relatingLine = data.relating.lines[i];
+            const relatingDiv = document.createElement('div');
+            relatingDiv.className = 'relating-line';
+            relatingDiv.style.marginTop = '10px';
+            relatingDiv.style.paddingLeft = '10px';
+            relatingDiv.style.borderLeft = '2px solid #09f';
+            relatingDiv.style.fontSize = '0.9em';
+            relatingDiv.innerHTML = `
+                <div style="font-weight:600; color:#09f;">之卦 ${escapeHtml(relatingLine.name)}</div>
+                <div class="muted">${escapeHtml(relatingLine.scripture)}</div>
+            `;
+            card.appendChild(relatingDiv);
+        }
+
+        container.appendChild(card);
+    }
+
+    // 收集所有硬币元素
+    const coinElements = Array.from(document.querySelectorAll('.coin-flip'));
+
+    // 按爻分组（每爻3个硬币）
+    const coinsByLine = [];
+    for (let i = 0; i < data.primary.lines.length; i++) {
+        coinsByLine.push(coinElements.slice(i * 3, i * 3 + 3));
+    }
+
+    // 逐爻停止翻转动画
+    let delay = 0;
+    const interval = 2000; // 每爻间隔1500ms
+    coinsByLine.forEach((coins, lineIdx) => {
+        setTimeout(() => {
+            coins.forEach(coin => {
+                const result = parseInt(coin.dataset.result, 10);
+                // 停止翻转
+                coin.classList.remove('flipping');
+                // 平滑旋转至正确面
+                if (result === 3) { // 正面
+                    coin.style.transform = 'rotateY(0deg)';
+                } else {            // 反面
+                    coin.style.transform = 'rotateY(180deg)';
+                }
+            });
+        }, delay);
+        delay += interval;
+    });
+
+    // 在所有硬币停止后，显示 AI 部分（如果有）
+    setTimeout(() => {
+        if (data.ai) {
+            renderAISection(data.ai);
+        }
+    }, delay + 50);
+}
+
+// 单独渲染 AI 部分（复用原有逻辑）
+function renderAISection(ai) {
+    const placeholder = document.getElementById('ai-section-placeholder');
+    if (!placeholder) return;
+
+    let html = `<div style="margin-top:16px;">`;
+    html += `<div style="font-weight:800; margin-bottom:8px;">AI 译文/解读</div>`;
+
+    if (ai.error) {
+        html += `<div class="muted">${escapeHtml(ai.error)}</div>`;
+    } else {
+        if (ai.translation) {
+            html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+            html += `<div style="font-weight:700; margin-bottom:6px;">译文</div>`;
+            html += `<div class="muted" style="line-height:1.7;">${escapeHtml(ai.translation)}</div>`;
             html += `</div>`;
         }
 
-        html += `</div>`;
-    });
-
-    html += `</div>`;
-    html += `</div>`;
-
-    // AI 部分
-    if (data.ai) {
-        html += `<div style="margin-top:16px;">`;
-        html += `<div style="font-weight:800; margin-bottom:8px;">AI 译文/解读</div>`;
-
-        if (data.ai.error) {
-            html += `<div class="muted">${escapeHtml(data.ai.error)}</div>`;
-        } else {
-            if (data.ai.translation) {
-                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
-                html += `<div style="font-weight:700; margin-bottom:6px;">译文</div>`;
-                html += `<div class="muted" style="line-height:1.7;">${escapeHtml(data.ai.translation)}</div>`;
-                html += `</div>`;
-            }
-
-            if (data.ai.interpretation && data.ai.interpretation.length > 0) {
-                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
-                html += `<div style="font-weight:700; margin-bottom:6px;">行动建议</div>`;
-                html += `<ul class="muted" style="line-height:1.7; margin-left:18px;">`;
-                data.ai.interpretation.forEach(item => {
-                    html += `<li>${escapeHtml(item)}</li>`;
-                });
-                html += `</ul>`;
-                html += `</div>`;
-            }
-
-            if (data.ai.anecdotes && data.ai.anecdotes.length > 0) {
-                html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
-                html += `<div style="font-weight:700; margin-bottom:6px;">典故</div>`;
-                html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
-                data.ai.anecdotes.forEach(a => {
-                    html += `<div class="glass" style="padding:10px; border-radius:12px;">`;
-                    html += `<div style="font-weight:700;">${escapeHtml(a.title)}</div>`;
-                    html += `<div class="muted" style="line-height:1.7;">${escapeHtml(a.content)}</div>`;
-                    if (a.source) {
-                        html += `<div class="muted" style="margin-top:6px; font-size:12px;">来源：${escapeHtml(a.source)}</div>`;
-                    }
-                    html += `</div>`;
-                });
-                html += `</div>`;
-                html += `</div>`;
-            }
-
-            if (data.ai.disclaimer) {
-                html += `<div class="muted" style="margin-top:8px;">${escapeHtml(data.ai.disclaimer)}</div>`;
-            }
+        if (ai.interpretation && ai.interpretation.length > 0) {
+            html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+            html += `<div style="font-weight:700; margin-bottom:6px;">行动建议</div>`;
+            html += `<ul class="muted" style="line-height:1.7; margin-left:18px;">`;
+            ai.interpretation.forEach(item => {
+                html += `<li>${escapeHtml(item)}</li>`;
+            });
+            html += `</ul>`;
+            html += `</div>`;
         }
-        html += `</div>`;
-    }
 
-    html += `</section>`;
-    document.getElementById('result-container').innerHTML = html;
+        if (ai.anecdotes && ai.anecdotes.length > 0) {
+            html += `<div class="glass" style="padding:12px; border-radius:14px; margin-bottom:10px;">`;
+            html += `<div style="font-weight:700; margin-bottom:6px;">典故</div>`;
+            html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+            ai.anecdotes.forEach(a => {
+                html += `<div class="glass" style="padding:10px; border-radius:12px;">`;
+                html += `<div style="font-weight:700;">${escapeHtml(a.title)}</div>`;
+                html += `<div class="muted" style="line-height:1.7;">${escapeHtml(a.content)}</div>`;
+                if (a.source) {
+                    html += `<div class="muted" style="margin-top:6px; font-size:12px;">来源：${escapeHtml(a.source)}</div>`;
+                }
+                html += `</div>`;
+            });
+            html += `</div>`;
+            html += `</div>`;
+        }
+
+        if (ai.disclaimer) {
+            html += `<div class="muted" style="margin-top:8px;">${escapeHtml(ai.disclaimer)}</div>`;
+        }
+    }
+    html += `</div>`;
+
+    placeholder.innerHTML = html;
 }
 
-// 简单的 HTML 转义函数，防止 XSS
+// escapeHtml 函数保持不变
 function escapeHtml(unsafe) {
     if (!unsafe) return unsafe;
     return unsafe

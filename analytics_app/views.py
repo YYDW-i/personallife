@@ -70,6 +70,7 @@ def iching_cast(request):
         "primary_lines": primary_lines,
         "relating_lines": relating_lines,
         "ai": ai,
+        "coin_results": r.coin_results,
     }
     return render(request, "analytics_app/iching/result.html", ctx)
 
@@ -109,6 +110,7 @@ def iching_cast_ajax(request):
         "primary_lines": primary_lines,
         "relating_lines": relating_lines,
         "ai": ai,
+        "coin_results": r.coin_results,
     }
     
     return JsonResponse(data)

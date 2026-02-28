@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from secrets import SystemRandom
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 _rng = SystemRandom()
 
@@ -11,7 +11,13 @@ class CastState:
     relating_arr: Optional[List[int]]
     moving_lines: List[int]          # 1..6
     line_nums: List[int]             # 6/7/8/9 bottom->top
+    coin_results: List[Tuple[int, int, int]]
 
+def _throw_three_coins() -> Tuple[int, int, int]:
+    """抛三枚硬币，返回三个值（2=反面，3=正面）"""
+    return (_rng.choice([2, 3]),
+            _rng.choice([2, 3]),
+            _rng.choice([2, 3]))
 
 def _cast_three_coins_one_line() -> int:
     # heads=3 tails=2 => 6/7/8/9
@@ -25,23 +31,33 @@ def cast_hexagram(method: str = "coins") -> CastState:
     primary_arr: List[int] = []
     moving: List[int] = []
     nums: List[int] = []
+    coins: List[Tuple[int, int, int]] = []
 
     for idx in range(1, 7):  # 1..6 bottom->top
         if method in ("coins", "random"):
-            n = _cast_three_coins_one_line()
+            a, b, c = _throw_three_coins()
+            n = a + b + c
         elif method == "time":
-            # 简化版：本质还是随机，但你后面可以替换成“梅花易数”的时间取数
+            # 时间起卦不涉及真实硬币，但我们仍可模拟一个随机组合
             n = _rng.choice([6, 7, 8, 9])
+            # 为了视觉一致性，用 n 生成一个假的三硬币组合（仅用于显示）
+            if n == 6:
+                a, b, c = 2, 2, 2
+            elif n == 7:
+                a, b, c = 3, 2, 2
+            elif n == 8:
+                a, b, c = 2, 3, 3
+            else:  # 9
+                a, b, c = 3, 3, 3
         else:
             raise ValueError("method must be coins/random/time")
 
         nums.append(n)
+        coins.append((a, b, c))
 
-        # 6 老阴（动） 7 少阳 8 少阴 9 老阳（动）
         if n in (6, 9):
             moving.append(idx)
 
-        # 阳：7/9 => 1；阴：6/8 => 0
         primary_arr.append(1 if n in (7, 9) else 0)
 
     relating_arr = None
@@ -55,7 +71,9 @@ def cast_hexagram(method: str = "coins") -> CastState:
         relating_arr=relating_arr,
         moving_lines=moving,
         line_nums=nums,
+        coin_results=coins,
     )
+
 
 
 def render_lines(arr: List[int], moving_lines: List[int], nums: List[int]) -> List[str]:
