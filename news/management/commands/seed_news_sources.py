@@ -4,21 +4,28 @@ from news.models import Topic, NewsSource
 TOPICS = [
     ("politics", "政治", 10),
     ("tech", "科技", 20),
-    ("entertainment", "娱乐", 50),
-    ("culture", "文化", 60),
-    ("ecology", "生态", 70),
+    ("entertainment", "文娱", 50),
     ("finance", "财经", 30),
     ("sports", "体育", 40),
     ("world", "国际", 80),
+    ("law", "法治", 75),
+    ("education", "教育", 25),
+    ("society", "社会", 35),
+    ("life", "生活", 90),
+    ("army", "军事", 45),
 ]
 
 SOURCES = [
-    ("央视新闻-时政", "https://rsshub.rssforever.com/cctv/china", "zh", "CN", ["politics"]),
+    ("央视新闻-国内", "https://rsshub.rssforever.com/cctv/china", "zh", "CN", ["politics"]),
     ("央视新闻-国际", "https://rsshub.rssforever.com/cctv/world", "zh", "CN", ["world"]),
-    ("央视新闻-财经", "https://rsshub.rssforever.com/cctv/society", "zh", "CN", ["finance"]),
+    ("央视新闻-社会", "https://rsshub.rssforever.com/cctv/society", "zh", "CN", ["society"]),
     ("央视新闻-科技", "https://rsshub.rssforever.com/cctv/tech", "zh", "CN", ["tech"]),
-    ("央视新闻-教育", "https://rsshub.rssforever.com/cctv/edu", "zh", "CN", ["sports"]),
-    ("央视新闻-娱乐", "https://rsshub.rssforever.com/cctv/ent", "zh", "CN", ["entertainment"]),
+    ("央视新闻-教育", "https://rsshub.rssforever.com/cctv/edu", "zh", "CN", ["education"]),
+    ("央视新闻-文娱", "https://rsshub.rssforever.com/cctv/ent", "zh", "CN", ["entertainment"]),
+    
+    ("央视新闻-生活", "https://rsshub.rssforever.com/cctv/life", "zh", "CN", ["life"]),
+    ("央视新闻-法治", "https://rsshub.rssforever.com/cctv/law", "zh", "CN", ["law"]),
+    ("参考消息-军事","https://rsshub.rssforever.com/cankaoxiaoxi/column/junshi", "zh", "CN", ["army"]),
 
     ("BBC-Technology", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/technology/rss.xml", "en", "INTER", ["tech"]),
     ("BBC-Business", "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/business/rss.xml", "en", "INTER", ["finance"]),
