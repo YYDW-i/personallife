@@ -32,10 +32,10 @@
           <a class="tab {% if request.path|slice:":8" == "/maths/" %}active{% endif %}" href="{{ maths_url }}">Maths</a>
           <a class="tab {% if request.path|slice:":10" == "/calendar/" %}active{% endif %}" href="{{ cal_url }}">Calendar</a>
           <a class="tab {% if request.path|slice:":7" == "/news/" %}active{% endif %}" href="{{ news_url }}">News</a>
-          <a class="tab {% if request.path|slice:":25" == "/analytics_app/iching" %}active{% endif %}" href="{{ analytics_app_url }}">Analytics</a>
+          <a class="tab {% if request.path|slice:":20" == "/analytics/iching/" %}active{% endif %}" href="{{ analytics_app_url }}">Analytics</a>
           <a class="tab {% if request.path|slice:":10" == "/settings/" %}active{% endif %}" href="{{ set_url }}">Settings</a>
         </div>
-       
+
         <div class="tabs-right">
         <span class="tab subtle">你好，{{ user.username }}</span>
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
