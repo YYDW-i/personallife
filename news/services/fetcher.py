@@ -4,7 +4,7 @@ from datetime import datetime, timezone as dt_tz
 
 from django.db import transaction
 from django.utils import timezone
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from news.models import NewsSource, NewsItem
 
 
@@ -70,8 +70,10 @@ def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
     return new_count
 
 
-def fetch_all_sources() -> int:
-    total_new = 0
-    for src in NewsSource.objects.filter(is_active=True):
-        total_new += fetch_source(src)
-    return total_new
+def fetch_all_sources():
+    sources = NewsSource.objects.filter(is_active=True)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(fetch_source, src) for src in sources]
+        for future in as_completed(futures):
+            # 处理结果（可选）
+            pass
