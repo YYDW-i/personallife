@@ -8,40 +8,32 @@
       <div class="card-title">News · 每日简报</div>
       <div class="card-subtitle">{{ date }} · 标题 + 2–4 句高密度摘要 + 原文链接</div>
     </div>
-    <div class="cal-actions">
-      <a class="btn subtle" href="{% url 'news:preferences' %}">偏好设置</a>
-      <form method="POST" action="{% url 'news:refresh_today' %}" id="refresh-form">
+    <div class="cal-actions" style="display: flex; gap: 10px;">
+      <form method="POST" action="{% url 'news:sync_news' %}" id="sync-form">
         {% csrf_token %}
-        <button type="submit" class="btn">刷新今日简报</button>
+        <button type="submit" class="btn subtle" id="sync-btn">同步更新新闻</button>
       </form>
+      <form method="POST" action="{% url 'news:filter_news' %}" id="filter-form">
+        {% csrf_token %}
+        <button type="submit" class="btn" id="filter-btn">筛选新闻</button>
+      </form>
+      <a class="btn subtle" href="{% url 'news:preferences' %}">偏好设置</a>
     </div>
   </div>
-  <!-- 加载遮罩，默认隐藏 -->
+
+  <!-- 加载遮罩（可复用，但需要区分两个按钮的触发） -->
   <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:flex-start; align-items:center; flex-direction:column; color:white;">
-      <div style="margin-top: 50px; width:300px; background:#333; border-radius:10px; overflow:hidden;">
-          <div id="progress-bar" style="width:0%; height:20px; background:#4caf50; transition:width 0.2s;"></div>
-      </div>
-      <div style="margin-top:10px;">正在刷新新闻 <span id="progress-percent">0%</span></div>
-      <div style="margin-top:5px; font-size:14px; opacity:0.8;">请稍候...</div>
+    <div style="margin-top: 50px; width:300px; background:#333; border-radius:10px; overflow:hidden;">
+      <div id="progress-bar" style="width:0%; height:20px; background:#4caf50; transition:width 0.2s;"></div>
+    </div>
+    <div style="margin-top:10px;">正在处理 <span id="progress-percent">0%</span></div>
+    <div style="margin-top:5px; font-size:14px; opacity:0.8;" id="loading-message">请稍候...</div>
   </div>
 
-  <style>
-  .spinner {
-      border: 4px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top: 4px solid #fff;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-  }
-  </style>
+  <!-- 原简报内容保持不变 -->
   {% if not brief %}
     <div class="muted" style="margin-top:14px;">
-      还没有生成今日简报。你可以点击“刷新今日简报”，或等待系统每日自动生成。
+      还没有生成今日简报。你可以点击“筛选新闻”从已同步的新闻中生成，或先点击“同步更新新闻”抓取最新内容。
     </div>
   {% else %}
     <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
@@ -58,99 +50,99 @@
     </div>
   {% endif %}
 </section>
+
 <script>
 (function() {
-    const form = document.getElementById('refresh-form');
-    if (!form) return;
+    const syncForm = document.getElementById('sync-form');
+    const filterForm = document.getElementById('filter-form');
+    if (!syncForm && !filterForm) return;
 
     const overlay = document.getElementById('loading-overlay');
     const progressBar = document.getElementById('progress-bar');
     const percentText = document.getElementById('progress-percent');
+    const loadingMsg = document.getElementById('loading-message');
     let progressInterval = null;
     let currentProgress = 0;
 
-    // 开始进度条动画
-    function startProgress() {
+    function startProgress(message) {
         currentProgress = 0;
         progressBar.style.width = '0%';
         percentText.textContent = '0%';
+        if (loadingMsg) loadingMsg.textContent = message || '请稍候...';
         overlay.style.display = 'flex';
 
-        // 模拟进度增长，每100ms增加1%，到90%后停止
         progressInterval = setInterval(() => {
             if (currentProgress < 90) {
                 currentProgress += 1;
                 progressBar.style.width = currentProgress + '%';
                 percentText.textContent = currentProgress + '%';
             } else {
-                // 达到90%后暂停增长
                 clearInterval(progressInterval);
                 progressInterval = null;
             }
-        }, 1000);
+        }, 1000); // 每秒增长1%，90%后停止
     }
 
-    // 结束进度条（成功或失败）
     function finishProgress(success = true) {
         if (progressInterval) {
             clearInterval(progressInterval);
             progressInterval = null;
         }
-        // 瞬间完成到100%
         currentProgress = 100;
         progressBar.style.width = '100%';
         percentText.textContent = '100%';
 
         if (success) {
-            // 稍后刷新页面
             setTimeout(() => {
                 window.location.reload();
             }, 300);
         } else {
-            // 失败时短暂显示后隐藏遮罩
             setTimeout(() => {
                 overlay.style.display = 'none';
-                // 重置进度条以备下次使用
                 progressBar.style.width = '0%';
                 percentText.textContent = '0%';
             }, 1000);
         }
     }
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault(); // 阻止默认提交
-
-        // 开始进度条
-        startProgress();
-
-        const formData = new FormData(form);
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    finishProgress(true); // 成功，刷新页面
+    async function submitForm(form, message) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            startProgress(message);
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        finishProgress(true);
+                    } else {
+                        alert('操作失败，请稍后重试');
+                        finishProgress(false);
+                    }
                 } else {
-                    alert('刷新失败，请稍后重试');
+                    alert('网络错误');
                     finishProgress(false);
                 }
-            } else {
-                alert('网络错误');
+            } catch (err) {
+                console.error(err);
+                alert('发生错误');
                 finishProgress(false);
             }
-        } catch (err) {
-            console.error(err);
-            alert('发生错误');
-            finishProgress(false);
-        }
-    });
+        });
+    }
+
+    if (syncForm) {
+        submitForm(syncForm, '正在同步新闻（可能需要几分钟）...');
+    }
+    if (filterForm) {
+        submitForm(filterForm, '正在生成简报...');
+    }
 })();
 </script>
 {% endblock %}
