@@ -18,6 +18,8 @@
         <option value="plot">作图</option>
         <option value="plot3d">3D 作图</option>
         <option value="linear">线性代数</option>
+        <option value="limit">求极限</option>
+        <option value="series">泰勒展开</option>
       </select>
 
       <input id="mainInput" class="input" style="flex:1; min-width:260px;"
@@ -94,6 +96,26 @@
         <span class="muted">b (向量或矩阵)：</span>
         <input id="matrixB" class="input" style="width:200px;" placeholder="[5,6] 或 [[5],[6]]" />
       </div>
+    </div>
+
+    <!-- 极限参数 -->
+    <div id="limitArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">趋近于：</span>
+      <input id="approach" class="input" style="width:120px;" value="0" />
+      <span class="muted">方向：</span>
+      <select id="direction" class="input" style="width:100px;">
+        <option value="+-">双边</option>
+        <option value="+">右极限</option>
+        <option value="-">左极限</option>
+      </select>
+    </div>
+
+    <!-- 级数参数 -->
+    <div id="seriesArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">展开点：</span>
+      <input id="point" class="input" style="width:120px;" value="0" />
+      <span class="muted">阶数：</span>
+      <input id="series_order" class="input" style="width:120px;" value="6" />   <!-- 修改此处 -->
     </div>
   </div>
 
@@ -227,6 +249,9 @@ function updatePanels(){
   document.getElementById("plot3dArgs").style.display = (mode === "plot3d") ? "flex" : "none";
 
   document.getElementById("linearArgs").style.display = (mode === "linear") ? "flex" : "none";
+  document.getElementById("limitArgs").style.display = (mode === "limit") ? "flex" : "none";
+  document.getElementById("seriesArgs").style.display = (mode === "series") ? "flex" : "none";
+  
   if (mode === "linear") {
     const op = document.getElementById("linOp").value;
     document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
@@ -296,6 +321,16 @@ async function run(){
     if (payload.op === "solve") {
       payload.vector = document.getElementById("matrixB").value; // 假设输入的是向量
     }
+  }
+  if (mode === "limit") {
+    payload.approach = document.getElementById("approach").value;
+    payload.direction = document.getElementById("direction").value;
+  }
+  if (mode === "series") {
+    payload.point = document.getElementById("point").value;
+    let orderVal = document.getElementById("series_order").value;   // 使用新 ID
+    if (orderVal === "") orderVal = "6";
+    payload.order = orderVal;
   }
 
   const runBtn = document.getElementById("runBtn");

@@ -337,7 +337,14 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
             n=payload.get("n", 80),
             workspace=workspace
         )
-
+    if mode == "limit":
+        return limit_expr(expr, var, payload.get("approach", "0"), payload.get("direction", "+-"), workspace)
+    if mode == "series":
+        order = payload.get("order")
+        # 如果 order 不存在或为空字符串，则使用默认值 6
+        if order is None or order == "":
+            order = 6
+        return series_expr(expr, var, payload.get("point", "0"), order, workspace)
     raise ValueError(f"不支持的模式：{mode}")
 
 def _parse_matrix(mat_str):
@@ -413,4 +420,49 @@ def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = N
         "kind": "text",
         "result_str": result_str,
         "result_latex": result_latex,
+    }
+
+def limit_expr(expr_str: str, var_name="x", approach="0", direction="+-", workspace: dict = None):
+    workspace = workspace or {}
+    var = _sym(var_name)
+    local_ws = dict(workspace)
+    local_ws[var_name] = var
+    expr = safe_parse(expr_str, local_ws)
+    approach_val = safe_parse(approach, local_ws)
+    # direction: '+' 右极限, '-' 左极限, '+-' 双边极限
+    if direction == "+":
+        limit = sp.limit(expr, var, approach_val, dir="+")
+    elif direction == "-":
+        limit = sp.limit(expr, var, approach_val, dir="-")
+    else:
+        limit = sp.limit(expr, var, approach_val)
+    return {
+        "kind": "text",
+        "expr_latex": sp.latex(expr),
+        "result_str": str(limit),
+        "result_latex": sp.latex(limit),
+    }
+
+def series_expr(expr_str: str, var_name="x", point="0", order=6, workspace: dict | None = None):
+    workspace = workspace or {}
+    var = _sym(var_name)
+    local_ws = dict(workspace)
+    local_ws[var_name] = var
+    expr = safe_parse(expr_str, local_ws)
+    point_val = safe_parse(point, local_ws)
+
+    # 确保 order 是正整数
+    try:
+        order = int(order)
+        if order <= 0:
+            raise ValueError("展开阶数必须为正整数")
+    except ValueError:
+        raise ValueError("展开阶数必须为整数")
+
+    series = sp.series(expr, var, point_val, order)
+    return {
+        "kind": "text",
+        "expr_latex": sp.latex(expr),
+        "result_str": str(series),
+        "result_latex": sp.latex(series),
     }
