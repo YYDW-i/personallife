@@ -3,6 +3,9 @@ import io
 import re
 import numpy as np
 import sympy as sp
+
+import ast
+
 from sympy.parsing.sympy_parser import (
     parse_expr, standard_transformations, implicit_multiplication_application
 )
@@ -336,3 +339,78 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
         )
 
     raise ValueError(f"不支持的模式：{mode}")
+
+def _parse_matrix(mat_str):
+    """将字符串如 '[[1,2],[3,4]]' 转换为嵌套列表，支持符号"""
+    try:
+        # 尝试使用 ast.literal_eval 安全解析
+        mat = ast.literal_eval(mat_str)
+        if isinstance(mat, list) and all(isinstance(row, list) for row in mat):
+            return mat
+        else:
+            raise ValueError("矩阵格式应为二维列表，例如 [[1,2],[3,4]]")
+    except:
+        raise ValueError("矩阵格式不正确")
+
+def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = None, workspace: dict = None):
+    """
+    支持的操作：
+        det: 行列式
+        inv: 逆矩阵
+        eig: 特征值和特征向量
+        solve: 解线性方程组 Ax = b (b 为向量或矩阵)
+        rank: 矩阵的秩
+        transpose: 转置
+    """
+    workspace = workspace or {}
+    A_list = _parse_matrix(matrix_a)
+    # 将列表转换为 numpy 数组（数值计算）
+    try:
+        A = np.array(A_list, dtype=float)
+    except:
+        raise ValueError("矩阵元素必须为数值")
+
+    if op == "det":
+        if A.shape[0] != A.shape[1]:
+            raise ValueError("行列式只对方阵定义")
+        result = np.linalg.det(A)
+        result_latex = sp.latex(result)
+        result_str = str(result)
+    elif op == "inv":
+        if A.shape[0] != A.shape[1]:
+            raise ValueError("逆矩阵只对方阵定义")
+        inv = np.linalg.inv(A)
+        result_str = str(inv.tolist())
+        result_latex = sp.latex(sp.Matrix(inv))  # 转换为 sympy 矩阵以获得 LaTeX
+    elif op == "eig":
+        eigvals, eigvecs = np.linalg.eig(A)
+        # 将结果转换为可读格式
+        result_str = f"特征值: {eigvals}\n特征向量:\n{eigvecs}"
+        # 生成 LaTeX 表示（简化）
+        result_latex = sp.latex(sp.Matrix(eigvals)) + r"\\" + sp.latex(sp.Matrix(eigvecs))
+    elif op == "solve":
+        if not matrix_b and not vector:
+            raise ValueError("解方程需要提供 b (矩阵或向量)")
+        if vector:
+            b = np.array(_parse_matrix(vector), dtype=float).flatten()
+        else:
+            b = np.array(_parse_matrix(matrix_b), dtype=float)
+        x = np.linalg.solve(A, b)
+        result_str = str(x.tolist())
+        result_latex = sp.latex(sp.Matrix(x))
+    elif op == "rank":
+        rank = np.linalg.matrix_rank(A)
+        result_str = str(rank)
+        result_latex = str(rank)
+    elif op == "transpose":
+        T = A.T
+        result_str = str(T.tolist())
+        result_latex = sp.latex(sp.Matrix(T))
+    else:
+        raise ValueError(f"不支持的线性代数操作: {op}")
+
+    return {
+        "kind": "text",
+        "result_str": result_str,
+        "result_latex": result_latex,
+    }

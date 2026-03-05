@@ -17,6 +17,7 @@
         <option value="solve">解方程</option>
         <option value="plot">作图</option>
         <option value="plot3d">3D 作图</option>
+        <option value="linear">线性代数</option>
       </select>
 
       <input id="mainInput" class="input" style="flex:1; min-width:260px;"
@@ -74,6 +75,25 @@
       <input id="y3max" class="input" style="width:110px;" value="5" />
       <span class="muted">网格 n：</span>
       <input id="n3" class="input" style="width:110px;" value="80" />
+    </div>
+
+    <!-- 线性代数参数 -->
+    <div id="linearArgs" style="display:none; margin-top:10px; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="muted">操作：</span>
+      <select id="linOp" class="input" style="width:140px;">
+        <option value="det">行列式</option>
+        <option value="inv">逆矩阵</option>
+        <option value="eig">特征值/特征向量</option>
+        <option value="solve">解线性方程组 Ax=b</option>
+        <option value="rank">秩</option>
+        <option value="transpose">转置</option>
+      </select>
+      <span class="muted">矩阵 A：</span>
+      <input id="matrixA" class="input" style="width:200px;" placeholder="[[1,2],[3,4]]" />
+      <div id="linExtra" style="display:none; gap:10px; align-items:center;">
+        <span class="muted">b (向量或矩阵)：</span>
+        <input id="matrixB" class="input" style="width:200px;" placeholder="[5,6] 或 [[5],[6]]" />
+      </div>
     </div>
   </div>
 
@@ -206,6 +226,11 @@ function updatePanels(){
   document.getElementById("plotArgs").style.display = (mode === "plot") ? "flex" : "none";
   document.getElementById("plot3dArgs").style.display = (mode === "plot3d") ? "flex" : "none";
 
+  document.getElementById("linearArgs").style.display = (mode === "linear") ? "flex" : "none";
+  if (mode === "linear") {
+    const op = document.getElementById("linOp").value;
+    document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
+  }
   const hint = document.getElementById("hint");
   const hints = {
     eval: "示例：2*sin(pi/4)+sqrt(2)",
@@ -263,6 +288,14 @@ async function run(){
     payload.n = document.getElementById("n3").value;
     payload.x_var = "x";
     payload.y_var = "y";
+  }
+
+  if (mode === "linear") {
+    payload.op = document.getElementById("linOp").value;
+    payload.matrix_a = document.getElementById("matrixA").value;
+    if (payload.op === "solve") {
+      payload.vector = document.getElementById("matrixB").value; // 假设输入的是向量
+    }
   }
 
   const runBtn = document.getElementById("runBtn");

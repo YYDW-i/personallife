@@ -2,8 +2,7 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from .engine import eval_expr, plot_2d
-
+from .engine import eval_expr, plot_2d, linear_algebra
 from .engine import run as run_engine
 
 @login_required
@@ -39,7 +38,15 @@ def api_run(request):
     mode = payload.get("mode", "eval")
 
     try:
-        out = run_engine(mode, payload, workspace={})  # MVP：先不做 workspace
+        if mode == "linear":
+            # 线性代数特殊处理，因为输入不是单一表达式
+            op = payload.get("op")
+            matrix_a = payload.get("matrix_a")
+            matrix_b = payload.get("matrix_b")
+            vector = payload.get("vector")
+            out = linear_algebra(op, matrix_a, matrix_b, vector, workspace={})
+        else:
+            out = run_engine(mode, payload, workspace={})
         return JsonResponse({"ok": True, "data": out})
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
