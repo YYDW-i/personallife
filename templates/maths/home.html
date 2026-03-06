@@ -20,6 +20,7 @@
         <option value="linear">线性代数</option>
         <option value="limit">求极限</option>
         <option value="series">泰勒展开</option>
+        <option value="ml">ML 工具</option>
       </select>
 
       <input id="mainInput" class="input" style="flex:1; min-width:260px;"
@@ -116,6 +117,37 @@
       <input id="point" class="input" style="width:120px;" value="0" />
       <span class="muted">阶数：</span>
       <input id="series_order" class="input" style="width:120px;" value="6" />   <!-- 修改此处 -->
+    </div>
+
+    <!-- ML 工具参数 -->
+    <div id="mlArgs" style="display:none; margin-top:10px; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span class="muted">子操作：</span>
+        <select id="mlOp" class="input" style="width:140px;">
+          <option value="gradient">梯度</option>
+          <option value="jacobian">雅可比矩阵</option>
+          <option value="hessian">海森矩阵</option>
+          <option value="gd_demo">梯度下降演示</option>
+        </select>
+      </div>
+      <!-- 变量列表（通用） -->
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span class="muted">变量：</span>
+        <input id="mlVars" class="input" style="width:200px;" value="x, y" placeholder="逗号分隔，如 x, y" />
+      </div>
+      <!-- 雅可比特殊说明：表达式用分号分隔多个函数 -->
+      <div id="jacobianHint" style="display:none; color: #aaa; font-size:0.9em;">
+        多个函数请用分号分隔，例如: x*y; x**2 + y**2
+      </div>
+      <!-- 梯度下降演示参数 -->
+      <div id="gdParams" style="display:none; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span class="muted">初始点：</span>
+        <input id="gdX0" class="input" style="width:160px;" value="1, 1" placeholder="x0, y0" />
+        <span class="muted">学习率：</span>
+        <input id="gdLr" class="input" style="width:100px;" value="0.1" />
+        <span class="muted">步数：</span>
+        <input id="gdSteps" class="input" style="width:100px;" value="20" />
+      </div>
     </div>
   </div>
 
@@ -252,6 +284,16 @@ function updatePanels(){
   document.getElementById("limitArgs").style.display = (mode === "limit") ? "flex" : "none";
   document.getElementById("seriesArgs").style.display = (mode === "series") ? "flex" : "none";
   
+  document.getElementById("mlArgs").style.display = (mode === "ml") ? "flex" : "none";
+  
+  if (mode === "ml") {
+    const mlOp = document.getElementById("mlOp").value;
+    // 显示/隐藏特定子操作的额外输入
+    document.getElementById("jacobianHint").style.display = (mlOp === "jacobian") ? "block" : "none";
+    document.getElementById("gdParams").style.display = (mlOp === "gd_demo") ? "flex" : "none";
+  }
+  document.getElementById("mlOp").addEventListener("change", updatePanels);
+
   if (mode === "linear") {
     const op = document.getElementById("linOp").value;
     document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
@@ -333,6 +375,17 @@ async function run(){
     let orderVal = document.getElementById("series_order").value;   // 使用新 ID
     if (orderVal === "") orderVal = "6";
     payload.order = orderVal;
+  }
+
+  if (mode === "ml") {
+    payload.ml_op = document.getElementById("mlOp").value;
+    payload.vars = document.getElementById("mlVars").value;
+    if (payload.ml_op === "gd_demo") {
+      payload.x0 = document.getElementById("gdX0").value;
+      payload.lr = document.getElementById("gdLr").value;
+      payload.steps = document.getElementById("gdSteps").value;
+    }
+    // 注意：表达式 expr 从主输入框获取，对于雅可比，用户应在主输入框中输入多个函数（分号分隔）
   }
 
   const runBtn = document.getElementById("runBtn");

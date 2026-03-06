@@ -345,6 +345,23 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
         if order is None or order == "":
             order = 6
         return series_expr(expr, var, payload.get("point", "0"), order, workspace)
+    if mode == "ml":
+        ml_op = payload.get("ml_op", "gradient")
+        vars_str = payload.get("vars", "x")
+        if ml_op == "gradient":
+            return gradient(expr, vars_str, workspace)
+        elif ml_op == "jacobian":
+            # expr 此时应包含多个函数表达式，用分号分隔
+            return jacobian(expr, vars_str, workspace)
+        elif ml_op == "hessian":
+            return hessian(expr, vars_str, workspace)
+        elif ml_op == "gd_demo":
+            x0 = payload.get("x0", "0,0")
+            lr = float(payload.get("lr", 0.1))
+            steps = int(payload.get("steps", 20))
+            return gradient_descent_demo(expr, vars_str, x0, lr, steps)
+        else:
+            raise ValueError(f"不支持的 ML 子操作: {ml_op}")
     raise ValueError(f"不支持的模式：{mode}")
 
 def _parse_matrix(mat_str):
@@ -465,4 +482,200 @@ def series_expr(expr_str: str, var_name="x", point="0", order=6, workspace: dict
         "expr_latex": sp.latex(expr),
         "result_str": str(series),
         "result_latex": sp.latex(series),
+    }
+
+
+# ---------- 机器学习专用工具 ----------
+
+def gradient(expr_str: str, vars_str: str, workspace: dict = None):
+    """
+    计算多元标量函数的梯度向量
+    :param expr_str: 表达式，例如 "x**2 + y**2"
+    :param vars_str: 变量列表，逗号分隔，例如 "x, y"
+    :param workspace: 工作空间
+    :return: 包含梯度向量字符串和 LaTeX 的字典
+    """
+    workspace = workspace or {}
+    # 解析变量列表
+    var_names = [v.strip() for v in vars_str.split(',') if v.strip()]
+    if not var_names:
+        raise ValueError("至少需要提供一个变量")
+    symbols = [_sym(name) for name in var_names]
+    local_ws = dict(workspace)
+    for name, sym in zip(var_names, symbols):
+        local_ws[name] = sym
+
+    expr = safe_parse(expr_str, local_ws)
+    # 计算梯度：对每个变量求偏导
+    grad = [sp.diff(expr, sym) for sym in symbols]
+    grad_simplified = [sp.simplify(g) for g in grad]
+
+    # 格式化输出
+    grad_str = "[" + ", ".join(str(g) for g in grad_simplified) + "]"
+    grad_latex = r"\nabla f = \begin{bmatrix}" + \
+                 r" \\ ".join(sp.latex(g) for g in grad_simplified) + \
+                 r"\end{bmatrix}"
+    return {
+        "kind": "text",
+        "expr_latex": sp.latex(expr),
+        "result_str": grad_str,
+        "result_latex": grad_latex,
+    }
+
+def jacobian(exprs_str: str, vars_str: str, workspace: dict = None):
+    """
+    计算多个函数关于变量的雅可比矩阵
+    :param exprs_str: 函数列表，用分号分隔，例如 "x*y; x**2 + y**2"
+    :param vars_str: 变量列表，逗号分隔
+    """
+    workspace = workspace or {}
+    var_names = [v.strip() for v in vars_str.split(',') if v.strip()]
+    if not var_names:
+        raise ValueError("至少需要提供一个变量")
+    symbols = [_sym(name) for name in var_names]
+    local_ws = dict(workspace)
+    for name, sym in zip(var_names, symbols):
+        local_ws[name] = sym
+
+    # 解析多个表达式
+    expr_strings = [e.strip() for e in exprs_str.split(';') if e.strip()]
+    if not expr_strings:
+        raise ValueError("至少需要提供一个函数")
+
+    exprs = [safe_parse(e, local_ws) for e in expr_strings]
+
+    # 构建雅可比矩阵：行对应函数，列对应变量
+    J = []
+    for f in exprs:
+        row = [sp.diff(f, sym) for sym in symbols]
+        J.append(row)
+
+    # 简化每个元素
+    J_simple = [[sp.simplify(entry) for entry in row] for row in J]
+
+    # 格式化输出
+    J_latex = r"\mathbf{J} = \begin{bmatrix}"
+    for i, row in enumerate(J_simple):
+        row_latex = " & ".join(sp.latex(entry) for entry in row)
+        J_latex += row_latex
+        if i < len(J_simple)-1:
+            J_latex += r" \\ "
+    J_latex += r"\end{bmatrix}"
+
+    # 字符串表示（简化）
+    J_str = "\n".join([str(row) for row in J_simple])
+
+    return {
+        "kind": "text",
+        "result_str": J_str,
+        "result_latex": J_latex,
+    }
+
+def hessian(expr_str: str, vars_str: str, workspace: dict = None):
+    """
+    计算标量函数的海森矩阵
+    """
+    workspace = workspace or {}
+    var_names = [v.strip() for v in vars_str.split(',') if v.strip()]
+    if not var_names:
+        raise ValueError("至少需要提供一个变量")
+    symbols = [_sym(name) for name in var_names]
+    local_ws = dict(workspace)
+    for name, sym in zip(var_names, symbols):
+        local_ws[name] = sym
+
+    expr = safe_parse(expr_str, local_ws)
+
+    # 计算海森矩阵
+    H = sp.hessian(expr, symbols)
+    # 简化每个元素
+    H_simple = sp.simplify(H)
+
+    # 格式化输出
+    H_latex = sp.latex(H_simple)
+    H_str = str(H_simple)
+
+    return {
+        "kind": "text",
+        "expr_latex": sp.latex(expr),
+        "result_str": H_str,
+        "result_latex": H_latex,
+    }
+
+def gradient_descent_demo(func_str: str, vars_str: str, x0_str: str, lr: float = 0.1, steps: int = 20):
+    """
+    梯度下降数值演示，绘制函数等高线和迭代轨迹
+    :param func_str: 二元函数表达式，例如 "x**2 + y**2"
+    :param vars_str: 变量名，例如 "x, y"
+    :param x0_str: 初始点，例如 "1, 2"
+    :param lr: 学习率
+    :param steps: 迭代步数
+    :return: 包含图像 base64 的字典
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    import numpy as np
+
+    # 解析变量和初始点
+    var_names = [v.strip() for v in vars_str.split(',') if v.strip()]
+    if len(var_names) != 2:
+        raise ValueError("梯度下降演示目前只支持二元函数")
+    x_name, y_name = var_names[0], var_names[1]
+    x_sym = _sym(x_name)
+    y_sym = _sym(y_name)
+
+    # 解析初始点
+    x0_vals = [float(v.strip()) for v in x0_str.split(',') if v.strip()]
+    if len(x0_vals) != 2:
+        raise ValueError("初始点需要两个数值，例如 '1, 2'")
+
+    # 解析函数表达式
+    expr = safe_parse(func_str, {x_name: x_sym, y_name: y_sym})
+
+    # 计算梯度函数
+    grad_x = sp.lambdify((x_sym, y_sym), sp.diff(expr, x_sym), modules='numpy')
+    grad_y = sp.lambdify((x_sym, y_sym), sp.diff(expr, y_sym), modules='numpy')
+    f = sp.lambdify((x_sym, y_sym), expr, modules='numpy')
+
+    # 执行梯度下降
+    points = [np.array(x0_vals, dtype=float)]
+    for _ in range(steps):
+        x, y = points[-1]
+        gx = grad_x(x, y)
+        gy = grad_y(x, y)
+        new_x = x - lr * gx
+        new_y = y - lr * gy
+        points.append(np.array([new_x, new_y]))
+    points = np.array(points)
+
+    # 绘制等高线和轨迹
+    x_min, x_max = min(points[:,0].min(), -2), max(points[:,0].max(), 2)
+    y_min, y_max = min(points[:,1].min(), -2), max(points[:,1].max(), 2)
+    X, Y = np.meshgrid(np.linspace(x_min, x_max, 100),
+                       np.linspace(y_min, y_max, 100))
+    Z = f(X, Y)
+
+    fig, ax = plt.subplots(figsize=(8,6))
+    contour = ax.contour(X, Y, Z, levels=20, cmap=cm.viridis)
+    ax.clabel(contour, inline=True, fontsize=8)
+    ax.plot(points[:,0], points[:,1], 'ro-', markersize=4, label='GD path')
+    ax.plot(points[0,0], points[0,1], 'go', markersize=8, label='Start')
+    ax.plot(points[-1,0], points[-1,1], 'bo', markersize=8, label='End')
+    ax.set_xlabel(x_name)
+    ax.set_ylabel(y_name)
+    ax.set_title(f"Gradient Descent, lr={lr}, steps={steps}")
+    ax.legend()
+    ax.grid(alpha=0.3)
+
+    # 保存为 base64
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=120, bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    img_b64 = base64.b64encode(buf.read()).decode('utf-8')
+
+    return {
+        "kind": "plot",
+        "img_base64": img_b64,
+        "func_latex": sp.latex(expr),
     }
