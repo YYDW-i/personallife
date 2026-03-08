@@ -348,65 +348,73 @@ async function run(){
   const mode = document.getElementById("mode").value;
   const expr = normalizeExpr(document.getElementById("mainInput").value);
   const vare  = (document.getElementById("vare").value || "x").trim();
-
-  if (!expr) { setStatus("请输入表达式"); return; }
-
-  const payload = { mode, expr, vare };
-
-  if (mode === "diff") payload.order = document.getElementById("order").value;
-  if (mode === "integrate") {
-    payload.a = document.getElementById("a").value;
-    payload.b = document.getElementById("b").value;
-  }
-  if (mode === "solve") {
-    payload.method = document.getElementById("method").value;
-    payload.x0 = document.getElementById("x0").value;
-  }
-  if (mode === "plot") {
-    payload.x_min = document.getElementById("xmin").value;
-    payload.x_max = document.getElementById("xmax").value;
-    payload.n = document.getElementById("npts").value;
-  }
-  if (mode === "plot3d") {
-    payload.x_min = document.getElementById("x3min").value;
-    payload.x_max = document.getElementById("x3max").value;
-    payload.y_min = document.getElementById("y3min").value;
-    payload.y_max = document.getElementById("y3max").value;
-    payload.n = document.getElementById("n3").value;
-    payload.x_var = "x";
-    payload.y_var = "y";
-  }
-
   if (mode === "linear") {
-    payload.op = document.getElementById("linOp").value;
-    payload.matrix_a = document.getElementById("matrixA").value;
-    if (payload.op === "solve") {
-      payload.vector = document.getElementById("matrixB").value; // 假设输入的是向量
+    // 线性代数模式：检查矩阵输入是否完整
+    const matrixA = document.getElementById("matrixA").value.trim();
+    if (!matrixA) {
+      setStatus("请输入矩阵 A");
+      return;
     }
-  }
-  if (mode === "limit") {
-    payload.approach = document.getElementById("approach").value;
-    payload.direction = document.getElementById("direction").value;
-  }
+    const op = document.getElementById("linOp").value;
+    if (op === "solve") {
+      const matrixB = document.getElementById("matrixB").value.trim();
+      if (!matrixB) {
+        setStatus("请输入 b 向量/矩阵");
+        return;
+      }
+    }
+  }else{
+      if (!expr) { setStatus("请输入表达式"); return; }
 
+      if (mode === "diff") payload.order = document.getElementById("order").value;
+      if (mode === "integrate") {
+        payload.a = document.getElementById("a").value;
+        payload.b = document.getElementById("b").value;
+      }
+      if (mode === "solve") {
+        payload.method = document.getElementById("method").value;
+        payload.x0 = document.getElementById("x0").value;
+      }
+      if (mode === "plot") {
+        payload.x_min = document.getElementById("xmin").value;
+        payload.x_max = document.getElementById("xmax").value;
+        payload.n = document.getElementById("npts").value;
+      }
+      if (mode === "plot3d") {
+        payload.x_min = document.getElementById("x3min").value;
+        payload.x_max = document.getElementById("x3max").value;
+        payload.y_min = document.getElementById("y3min").value;
+        payload.y_max = document.getElementById("y3max").value;
+        payload.n = document.getElementById("n3").value;
+        payload.x_var = "x";
+        payload.y_var = "y";
+      }
+      if (mode === "limit") {
+        payload.approach = document.getElementById("approach").value;
+        payload.direction = document.getElementById("direction").value;
+      }
+
+      
+      if (mode === "series") {
+        payload.point = document.getElementById("point").value;
+        let orderVal = document.getElementById("series_order").value;   // 使用新 ID
+        if (orderVal === "") orderVal = "6";
+        payload.order = orderVal;
+      }
+
+      if (mode === "ml") {
+        payload.ml_op = document.getElementById("mlOp").value;
+        payload.vars = document.getElementById("mlVars").value;
+        if (payload.ml_op === "gd_demo") {
+          payload.x0 = document.getElementById("gdX0").value;
+          payload.lr = document.getElementById("gdLr").value;
+          payload.steps = document.getElementById("gdSteps").value;
+        }
+        // 注意：表达式 expr 从主输入框获取，对于雅可比，用户应在主输入框中输入多个函数（分号分隔）
+      }
+  }
+  const payload = { mode, expr, vare };
   
-  if (mode === "series") {
-    payload.point = document.getElementById("point").value;
-    let orderVal = document.getElementById("series_order").value;   // 使用新 ID
-    if (orderVal === "") orderVal = "6";
-    payload.order = orderVal;
-  }
-
-  if (mode === "ml") {
-    payload.ml_op = document.getElementById("mlOp").value;
-    payload.vars = document.getElementById("mlVars").value;
-    if (payload.ml_op === "gd_demo") {
-      payload.x0 = document.getElementById("gdX0").value;
-      payload.lr = document.getElementById("gdLr").value;
-      payload.steps = document.getElementById("gdSteps").value;
-    }
-    // 注意：表达式 expr 从主输入框获取，对于雅可比，用户应在主输入框中输入多个函数（分号分隔）
-  }
 
   const runBtn = document.getElementById("runBtn");
   runBtn.disabled = true;

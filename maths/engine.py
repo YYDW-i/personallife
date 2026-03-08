@@ -364,17 +364,43 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
             raise ValueError(f"不支持的 ML 子操作: {ml_op}")
     raise ValueError(f"不支持的模式：{mode}")
 
-def _parse_matrix(mat_str):
-    """将字符串如 '[[1,2],[3,4]]' 转换为嵌套列表，支持符号"""
+def _parse_matrix(mat_str, name="矩阵"):
+    """将字符串解析为嵌套列表，支持更灵活的输入格式，并给出明确错误"""
+    s = mat_str.strip()
+    if not s:
+        raise ValueError(f"{name} 输入为空")
+
+    # 自动补全缺失的外层方括号
+    if not (s.startswith('[') and s.endswith(']')):
+        s = '[' + s + ']'
+
+    # 尝试修复多余括号的情况：例如如果以 '[[' 开头且以 ']]' 结尾，可能多了一层，但暂时不处理
+    # 先直接解析
     try:
-        # 尝试使用 ast.literal_eval 安全解析
-        mat = ast.literal_eval(mat_str)
-        if isinstance(mat, list) and all(isinstance(row, list) for row in mat):
-            return mat
+        mat = ast.literal_eval(s)
+    except (SyntaxError, ValueError) as e:
+        # 如果解析失败，尝试去掉可能多余的外层括号（例如用户输入了 [[...]] 但实际需要 [...]）
+        # 这里简单处理：如果 s 以 '[[' 开头且以 ']]' 结尾，尝试去掉一层
+        if s.startswith('[[') and s.endswith(']]'):
+            s = s[1:-1]  # 去掉最外层方括号
+            try:
+                mat = ast.literal_eval(s)
+            except:
+                raise ValueError(f"{name} 格式不正确，请使用正确的列表格式，如 [[1,2],[3,4]]。错误详情: {e}")
         else:
-            raise ValueError("矩阵格式应为二维列表，例如 [[1,2],[3,4]]")
-    except:
-        raise ValueError("矩阵格式不正确")
+            raise ValueError(f"{name} 格式不正确，请使用正确的列表格式，如 [[1,2],[3,4]]。错误详情: {e}")
+
+    # 确保结果是二维列表
+    if isinstance(mat, list):
+        if all(isinstance(row, list) for row in mat):
+            return mat
+        elif all(isinstance(item, (int, float)) for item in mat):
+            # 如果是一维列表，作为行向量返回（即转为二维：[[...]]）
+            return [mat]
+        else:
+            raise ValueError(f"{name} 应包含数字，或为二维列表")
+    else:
+        raise ValueError(f"{name} 格式不正确，应为列表")
 
 def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = None, workspace: dict = None):
     """
@@ -386,13 +412,14 @@ def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = N
         rank: 矩阵的秩
         transpose: 转置
     """
-    workspace = workspace or {}
-    A_list = _parse_matrix(matrix_a)
-    # 将列表转换为 numpy 数组（数值计算）
+    try:
+        A_list = _parse_matrix(matrix_a, "矩阵 A")
+    except ValueError as e:
+        raise ValueError(f"矩阵 A 解析失败: {e}")
     try:
         A = np.array(A_list, dtype=float)
-    except:
-        raise ValueError("矩阵元素必须为数值")
+    except Exception:
+        raise ValueError("矩阵 A 的元素必须为数值")
 
     if op == "det":
         if A.shape[0] != A.shape[1]:
@@ -414,11 +441,19 @@ def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = N
         result_latex = sp.latex(sp.Matrix(eigvals)) + r"\\" + sp.latex(sp.Matrix(eigvecs))
     elif op == "solve":
         if not matrix_b and not vector:
-            raise ValueError("解方程需要提供 b (矩阵或向量)")
-        if vector:
-            b = np.array(_parse_matrix(vector), dtype=float).flatten()
-        else:
-            b = np.array(_parse_matrix(matrix_b), dtype=float)
+            raise ValueError("解方程需要提供 b")
+        b_str = matrix_b if matrix_b else vector
+        try:
+            b_list = _parse_matrix(b_str, "向量 b")
+        except ValueError as e:
+            raise ValueError(f"b 解析失败: {e}")
+        try:
+            b = np.array(b_list, dtype=float)
+        except Exception:
+            raise ValueError("b 的元素必须为数值")
+        # 如果 b 是二维列矩阵，将其展平为一维向量
+        b = b.flatten()
+        # 求解
         x = np.linalg.solve(A, b)
         result_str = str(x.tolist())
         result_latex = sp.latex(sp.Matrix(x))
