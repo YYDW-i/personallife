@@ -313,6 +313,23 @@ function updatePanels(){
   hint.textContent = hints[mode] || "";
   clearOut();
 }
+// 监听 linOp 变化，实时控制 b 输入框的显示
+document.getElementById("linOp").addEventListener("change", function() {
+  const op = this.value;
+  document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
+});
+
+// 同时在 updatePanels 中也要根据当前 mode 和 op 初始化显示
+function updatePanels() {
+  const mode = document.getElementById("mode").value;
+  // ... 原有其他面板隐藏逻辑 ...
+
+  document.getElementById("linearArgs").style.display = (mode === "linear") ? "flex" : "none";
+  if (mode === "linear") {
+    const op = document.getElementById("linOp").value;
+    document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
+  }
+}
 
 document.getElementById("mode").addEventListener("change", updatePanels);
 document.getElementById("clearBtn").addEventListener("click", () => {
