@@ -348,20 +348,15 @@ async function run(){
   const mode = document.getElementById("mode").value;
   const expr = normalizeExpr(document.getElementById("mainInput").value);
   const vare  = (document.getElementById("vare").value || "x").trim();
+  const payload = { mode, expr, vare };
   if (mode === "linear") {
-    // 线性代数模式：检查矩阵输入是否完整
-    const matrixA = document.getElementById("matrixA").value.trim();
-    if (!matrixA) {
-      setStatus("请输入矩阵 A");
-      return;
-    }
-    const op = document.getElementById("linOp").value;
-    if (op === "solve") {
-      const matrixB = document.getElementById("matrixB").value.trim();
-      if (!matrixB) {
-        setStatus("请输入 b 向量/矩阵");
-        return;
-      }
+    payload.op = document.getElementById("linOp").value;
+    const matrixAInput = document.getElementById("matrixA");
+    payload.matrix_a = matrixAInput ? matrixAInput.value : '';   // 避免 null
+
+    if (payload.op === "solve") {
+        const matrixBInput = document.getElementById("matrixB");
+        payload.vector = matrixBInput ? matrixBInput.value : '';
     }
   }else{
       if (!expr) { setStatus("请输入表达式"); return; }
@@ -413,7 +408,7 @@ async function run(){
         // 注意：表达式 expr 从主输入框获取，对于雅可比，用户应在主输入框中输入多个函数（分号分隔）
       }
   }
-  const payload = { mode, expr, vare };
+  
   
 
   const runBtn = document.getElementById("runBtn");

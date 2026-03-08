@@ -412,6 +412,8 @@ def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = N
         rank: 矩阵的秩
         transpose: 转置
     """
+    if matrix_a is None:
+        raise ValueError("矩阵 A 不能为空")
     try:
         A_list = _parse_matrix(matrix_a, "矩阵 A")
     except ValueError as e:
@@ -440,9 +442,10 @@ def linear_algebra(op: str, matrix_a: str, matrix_b: str = None, vector: str = N
         # 生成 LaTeX 表示（简化）
         result_latex = sp.latex(sp.Matrix(eigvals)) + r"\\" + sp.latex(sp.Matrix(eigvecs))
     elif op == "solve":
+        
+        b_str = matrix_b if matrix_b else vector
         if not matrix_b and not vector:
             raise ValueError("解方程需要提供 b")
-        b_str = matrix_b if matrix_b else vector
         try:
             b_list = _parse_matrix(b_str, "向量 b")
         except ValueError as e:
