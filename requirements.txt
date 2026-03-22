@@ -16,7 +16,8 @@ pillow>=10.0                    # 图像处理（2D/3D作图）
 cnlunar>=0.2.4                 # 农历转换（节日提醒）
 lunardate>=0.2.0                  # 阴历日期处理（节日提醒）
 python-dateutil>=2.8             # 日期处理（节日提醒）
-torch==2.8.0                     # PyTorch深度学习框架（深度学习模块）
-torchvision==0.23.0              # PyTorch视觉库（深度学习模块）
+torch==2.5.1+cu121                     # PyTorch深度学习框架（深度学习模块）
+torchvision==0.20.1+cu121            # PyTorch视觉库（深度学习模块）
+torchaudio==2.5.1
 scikit-learn
 

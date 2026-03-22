@@ -67,6 +67,17 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 
 ![alt text](images/image-5.png)
 
+###  深度学习 (DeepLearning)
+- 填写模型、数据集、学习效率等参数
+- 自动生成pytorch相应代码
+- 可视化训练
+#### 功能模块
+![alt text](images/image-gong.png)
+#### 训练动画
+![alt text](images/image-train.png)
+#### 生成代码
+![alt text](images/image-code.png)
+
 ### ⚙️ 其他特性
 - 完整的用户认证（注册 / 登录 / 退出）
 - 响应式设计，适配桌面和移动端
