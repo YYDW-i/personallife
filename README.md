@@ -15,9 +15,9 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 日历视图联动，直观查看每天的任务分布
   
 #### 任务界面
-![alt text](image.png)
+![alt text](images/image.png)
 #### 番茄钟
-![alt text](image-6.png)
+![alt text](images/image-6.png)
 
 ### 🧮 数学实验室 (Maths)
 - 基于 **SymPy** 的计算引擎，无需编写代码即可：
@@ -28,9 +28,9 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 内置数学键盘，方便输入特殊符号和函数
 - 
 #### 多功能
-![alt text](image-7.png)
+![alt text](images/image-7.png)
 #### 以泰勒展开为例
-![alt text](image-1.png)
+![alt text](images/image-1.png)
 
 ### 📰 新闻简报 (News)
 - 每日使用前可先点击“同步更新新闻”按钮更新新闻
@@ -38,7 +38,7 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 个性化偏好设置：语言、地区、关键词、新闻主题
 - 生成 2-4 句高密度摘要 + 原文链接，快速掌握要点
 - 
-![alt text](image-8.png)
+![alt text](images/image-8.png)
 
 ### 📅 日历计划 (Planner)
 - 月视图 / 日视图展示任务，支持显示/隐藏已完成任务
@@ -46,7 +46,7 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 未设置时间的任务单独列在下方，不丢失
 - 在日历中还可以看到传统节日！
 
-![alt text](image-2.png)
+![alt text](images/image-2.png)
 
 ### 🔮 卦象分析 (Analytics - I Ching)
 - 传统三币起卦（支持纯随机/时间起卦）
@@ -55,9 +55,9 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 纯文化体验与自我反思，不替代专业建议
 - 新添加硬币图像！
 
-![alt text](image-3.png)
+![alt text](images/image-3.png)
 
-![alt text](image-9.png)
+![alt text](images/image-9.png)
 
 
 ### ❤️ 健康仪表盘 (Dashboard)
@@ -65,7 +65,7 @@ LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它
 - 包括 BMI 计算、风险提示、生活习惯建议
 - 结果缓存，避免重复调用 API
 
-![alt text](image-5.png)
+![alt text](images/image-5.png)
 
 ### ⚙️ 其他特性
 - 完整的用户认证（注册 / 登录 / 退出）
