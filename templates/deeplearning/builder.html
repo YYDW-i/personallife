@@ -407,7 +407,7 @@ async function startTraining() {
             updateChart(job.history);
             updateMetricBox(job.latest);
 
-            trainingStatus.textContent = `当前状态：${job.message}（${job.current_epoch}/${job.total_epochs}）`;
+            trainingStatus.textContent = `当前状态：${job.message}（${job.current_epoch}/${job.total_epochs}，设备：${job.device || "unknown"}）`;
 
             if (job.status === "finished") {
                 trainingStatus.textContent = "当前状态：训练完成。";

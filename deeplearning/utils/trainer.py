@@ -34,6 +34,7 @@ DATASET_TASK_MAP = {
 
 def start_training_job(config: dict) -> str:
     job_id = uuid.uuid4().hex
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     job_data = {
         "job_id": job_id,
@@ -41,6 +42,7 @@ def start_training_job(config: dict) -> str:
         "message": "训练任务已创建，等待启动。",
         "current_epoch": 0,
         "total_epochs": int(config["epochs"]),
+        "device": device,
         "history": {
             "epoch": [],
             "train_loss": [],
@@ -209,11 +211,13 @@ def _build_tabular_loaders(X, y, config, task_type):
         TensorDataset(X_train, y_train),
         batch_size=batch_size,
         shuffle=True,
+        pin_memory=torch.cuda.is_available(),
     )
     test_loader = DataLoader(
         TensorDataset(X_test, y_test),
         batch_size=batch_size,
         shuffle=False,
+        pin_memory=torch.cuda.is_available(),
     )
 
     input_dim = X_train.shape[1]
@@ -227,6 +231,8 @@ def _load_dataset(config):
     seed = int(config["random_seed"])
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
     if dataset_name == "normal_regression":
         num_samples = int(config["num_samples"])
@@ -275,35 +281,25 @@ def _load_dataset(config):
         transform = transforms.ToTensor()
 
         if dataset_name == "mnist":
-            train_dataset = datasets.MNIST(
-                root="data",
-                train=True,
-                download=True,
-                transform=transform,
-            )
-            test_dataset = datasets.MNIST(
-                root="data",
-                train=False,
-                download=True,
-                transform=transform,
-            )
+            train_dataset = datasets.MNIST(root="data", train=True, download=True, transform=transform)
+            test_dataset = datasets.MNIST(root="data", train=False, download=True, transform=transform)
         else:
-            train_dataset = datasets.FashionMNIST(
-                root="data",
-                train=True,
-                download=True,
-                transform=transform,
-            )
-            test_dataset = datasets.FashionMNIST(
-                root="data",
-                train=False,
-                download=True,
-                transform=transform,
-            )
+            train_dataset = datasets.FashionMNIST(root="data", train=True, download=True, transform=transform)
+            test_dataset = datasets.FashionMNIST(root="data", train=False, download=True, transform=transform)
 
         batch_size = int(config["batch_size"])
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            pin_memory=torch.cuda.is_available(),
+        )
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            pin_memory=torch.cuda.is_available(),
+        )
         input_dim = 28 * 28
         output_dim = 10
         return train_loader, test_loader, input_dim, output_dim, task_type
@@ -311,7 +307,7 @@ def _load_dataset(config):
     raise RuntimeError("暂不支持该数据集。")
 
 
-def _evaluate(model, loader, criterion, task_type):
+def _evaluate(model, loader, criterion, task_type, device):
     model.eval()
     total_loss = 0.0
     total_samples = 0
@@ -319,9 +315,10 @@ def _evaluate(model, loader, criterion, task_type):
 
     with torch.no_grad():
         for xb, yb in loader:
-            xb = _prepare_x(xb)
-            pred = model(xb)
+            xb = _prepare_x(xb).to(device, non_blocking=True)
+            yb = yb.to(device, non_blocking=True)
 
+            pred = model(xb)
             loss = criterion(pred, yb)
             total_loss += loss.item() * xb.size(0)
             total_samples += xb.size(0)
@@ -341,14 +338,17 @@ def _evaluate(model, loader, criterion, task_type):
 
 def _run_training_job(job_id: str, config: dict):
     try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         _update_job(
             job_id,
             status="running",
-            message="训练已开始。",
+            device=str(device),
+            message=f"训练已开始，当前设备：{device}",
         )
 
         train_loader, test_loader, input_dim, output_dim, task_type = _load_dataset(config)
-        model = _build_model(config, input_dim, output_dim, task_type)
+        model = _build_model(config, input_dim, output_dim, task_type).to(device)
         optimizer = _build_optimizer(config, model)
 
         if task_type == "regression":
@@ -365,7 +365,8 @@ def _run_training_job(job_id: str, config: dict):
             train_correct = 0
 
             for xb, yb in train_loader:
-                xb = _prepare_x(xb)
+                xb = _prepare_x(xb).to(device, non_blocking=True)
+                yb = yb.to(device, non_blocking=True)
 
                 optimizer.zero_grad()
                 pred = model(xb)
@@ -387,7 +388,7 @@ def _run_training_job(job_id: str, config: dict):
             else:
                 train_acc = None
 
-            test_loss, test_acc = _evaluate(model, test_loader, criterion, task_type)
+            test_loss, test_acc = _evaluate(model, test_loader, criterion, task_type, device)
 
             _append_history(
                 job_id=job_id,
@@ -401,15 +402,16 @@ def _run_training_job(job_id: str, config: dict):
             _update_job(
                 job_id,
                 current_epoch=epoch,
-                message=f"第 {epoch}/{epochs} 轮训练完成。",
+                message=f"第 {epoch}/{epochs} 轮训练完成，当前设备：{device}",
             )
 
-            time.sleep(0.15)
+            # 这一句原来是 0.15，会明显拖慢训练
+            time.sleep(0.02)
 
         _update_job(
             job_id,
             status="finished",
-            message="训练完成。",
+            message=f"训练完成，使用设备：{device}",
         )
 
     except Exception as e:
