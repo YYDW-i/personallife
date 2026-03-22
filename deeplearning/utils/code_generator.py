@@ -1,251 +1,413 @@
-from typing import Dict, List
+def _activation_code(name: str) -> str:
+    mapping = {
+        "relu": "nn.ReLU()",
+        "tanh": "nn.Tanh()",
+        "sigmoid": "nn.Sigmoid()",
+        "leaky_relu": "nn.LeakyReLU()",
+        "none": "nn.Identity()",
+    }
+    return mapping.get(name, "nn.ReLU()")
 
 
-ACTIVATION_MAP = {
-    "relu": "nn.ReLU()",
-    "sigmoid": "nn.Sigmoid()",
-    "tanh": "nn.Tanh()",
-    "leaky_relu": "nn.LeakyReLU()",
-}
-
-OPTIMIZER_MAP = {
-    "sgd": "optim.SGD",
-    "adam": "optim.Adam",
-    "adagrad": "optim.Adagrad",
-    "rmsprop": "optim.RMSprop",
-}
-
-LOSS_MAP = {
-    "mse": "nn.MSELoss()",
-    "cross_entropy": "nn.CrossEntropyLoss()",
-}
+def _optimizer_code(name: str, lr: float) -> str:
+    mapping = {
+        "sgd": f"torch.optim.SGD(model.parameters(), lr={lr})",
+        "adam": f"torch.optim.Adam(model.parameters(), lr={lr})",
+        "adamw": f"torch.optim.AdamW(model.parameters(), lr={lr})",
+        "rmsprop": f"torch.optim.RMSprop(model.parameters(), lr={lr})",
+    }
+    return mapping.get(name, f"torch.optim.Adam(model.parameters(), lr={lr})")
 
 
+def _dataset_code(config: dict) -> str:
+    name = config["dataset_name"]
+    test_size = config["test_size"]
+    batch_size = config["batch_size"]
+    seed = config["random_seed"]
+    normalize_data = config.get("normalize_data", False)
 
-def parse_hidden_layers(raw: str) -> List[int]:
-    return [int(x.strip()) for x in raw.split(",") if x.strip()]
+    if name == "normal_regression":
+        return f"""
+# 1. 构造随机正态分布回归数据
+num_samples = {config["num_samples"]}
+input_dim = {config["input_dim"]}
+noise_std = {config["noise_std"]}
+
+torch.manual_seed({seed})
+X = torch.randn(num_samples, input_dim)
+true_w = torch.randn(input_dim, 1)
+true_b = torch.randn(1)
+y = X @ true_w + true_b + noise_std * torch.randn(num_samples, 1)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X.numpy(), y.numpy(), test_size={test_size}, random_state={seed}
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.float32)
+y_test = torch.tensor(y_test, dtype=torch.float32)
+
+if {normalize_data}:
+    mean = X_train.mean(dim=0, keepdim=True)
+    std = X_train.std(dim=0, keepdim=True).clamp_min(1e-6)
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size={batch_size}, shuffle=False)
+
+task_type = "regression"
+output_dim = 1
+"""
+
+    if name == "normal_classification":
+        return f"""
+# 1. 构造随机正态分布分类数据
+num_samples = {config["num_samples"]}
+input_dim = {config["input_dim"]}
+noise_std = {config["noise_std"]}
+num_classes = {config["num_classes"]}
+
+torch.manual_seed({seed})
+X = torch.randn(num_samples, input_dim)
+W = torch.randn(input_dim, num_classes)
+b = torch.randn(num_classes)
+logits = X @ W + b + noise_std * torch.randn(num_samples, num_classes)
+y = torch.argmax(logits, dim=1)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X.numpy(),
+    y.numpy(),
+    test_size={test_size},
+    random_state={seed},
+    stratify=y.numpy()
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
+
+if {normalize_data}:
+    mean = X_train.mean(dim=0, keepdim=True)
+    std = X_train.std(dim=0, keepdim=True).clamp_min(1e-6)
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size={batch_size}, shuffle=False)
+
+task_type = "classification"
+output_dim = num_classes
+"""
+
+    if name == "iris":
+        return f"""
+# 1. 加载 Iris 数据集
+data = load_iris()
+X = data.data.astype("float32")
+y = data.target.astype("int64")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size={test_size}, random_state={seed}, stratify=y
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
+
+if {normalize_data}:
+    mean = X_train.mean(dim=0, keepdim=True)
+    std = X_train.std(dim=0, keepdim=True).clamp_min(1e-6)
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size={batch_size}, shuffle=False)
+
+input_dim = X_train.shape[1]
+task_type = "classification"
+output_dim = 3
+"""
+
+    if name == "breast_cancer":
+        return f"""
+# 1. 加载 Breast Cancer 数据集
+data = load_breast_cancer()
+X = data.data.astype("float32")
+y = data.target.astype("int64")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size={test_size}, random_state={seed}, stratify=y
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
+
+if {normalize_data}:
+    mean = X_train.mean(dim=0, keepdim=True)
+    std = X_train.std(dim=0, keepdim=True).clamp_min(1e-6)
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size={batch_size}, shuffle=False)
+
+input_dim = X_train.shape[1]
+task_type = "classification"
+output_dim = 2
+"""
+
+    if name == "digits":
+        return f"""
+# 1. 加载 Digits 数据集
+data = load_digits()
+X = (data.data / 16.0).astype("float32")
+y = data.target.astype("int64")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size={test_size}, random_state={seed}, stratify=y
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
+
+if {normalize_data}:
+    mean = X_train.mean(dim=0, keepdim=True)
+    std = X_train.std(dim=0, keepdim=True).clamp_min(1e-6)
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size={batch_size}, shuffle=False)
+
+input_dim = X_train.shape[1]
+task_type = "classification"
+output_dim = 10
+"""
+
+    if name == "mnist":
+        return f"""
+# 1. 加载 MNIST 数据集
+from torchvision import datasets, transforms
+
+transform = transforms.ToTensor()
+
+train_dataset = datasets.MNIST(root="data", train=True, download=True, transform=transform)
+test_dataset = datasets.MNIST(root="data", train=False, download=True, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)
+
+input_dim = 28 * 28
+task_type = "classification"
+output_dim = 10
+"""
+
+    if name == "fashion_mnist":
+        return f"""
+# 1. 加载 FashionMNIST 数据集
+from torchvision import datasets, transforms
+
+transform = transforms.ToTensor()
+
+train_dataset = datasets.FashionMNIST(root="data", train=True, download=True, transform=transform)
+test_dataset = datasets.FashionMNIST(root="data", train=False, download=True, transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)
+
+input_dim = 28 * 28
+task_type = "classification"
+output_dim = 10
+"""
+
+    return "# 暂不支持该数据集"
 
 
+def _model_code(config: dict) -> str:
+    model_name = config["model_name"]
+    activation = _activation_code(config["activation"])
+    dropout = config["dropout"]
+    hidden_sizes = config.get("hidden_sizes_list", [])
 
-def get_task_type(cfg: Dict) -> str:
-    if cfg["dataset_source"] == "builtin":
-        return "classification"
-    return "classification" if cfg["synthetic_task"] == "normal_classification" else "regression"
+    if model_name == "linear":
+        return """
+# 2. 构造模型
+model = nn.Linear(input_dim, output_dim)
+"""
 
+    if model_name == "custom_formula":
+        formula = config.get("custom_formula", "y = w*x + b")
+        return f'''
+# 2. 构造自定义模型
+class CustomModel(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
+        self.linear = nn.Linear(input_dim, 1)
 
+    def forward(self, x):
+        # 你填写的公式：{formula}
+        # 这里先给一个最简单示例，后续你可以继续改
+        return self.linear(x)
 
-def get_input_dim(cfg: Dict) -> int:
-    if cfg["dataset_source"] == "builtin":
-        mapping = {
-            "mnist": 28 * 28,
-            "fashion_mnist": 28 * 28,
-            "cifar10": 3 * 32 * 32,
-        }
-        return mapping[cfg["builtin_dataset"]]
-    return int(cfg["input_dim"])
+model = CustomModel(input_dim)
+'''
 
+    hidden_sizes = hidden_sizes or [64, 32]
+    hidden_text = ", ".join(str(x) for x in hidden_sizes)
 
+    return f"""
+# 2. 构造 MLP 模型
+layers = []
+prev_dim = input_dim
+hidden_sizes = [{hidden_text}]
 
-def get_output_dim(cfg: Dict) -> int:
-    task = get_task_type(cfg)
-    if task == "regression":
-        return 1
-    if cfg["dataset_source"] == "builtin":
-        return 10
-    return 2
+for hidden in hidden_sizes:
+    layers.append(nn.Linear(prev_dim, hidden))
+    layers.append({activation})
+    if {dropout} > 0:
+        layers.append(nn.Dropout({dropout}))
+    prev_dim = hidden
 
-
-
-def get_loss_code(cfg: Dict) -> str:
-    task = get_task_type(cfg)
-    loss_function = cfg["loss_function"]
-    if loss_function == "auto":
-        return "nn.MSELoss()" if task == "regression" else "nn.CrossEntropyLoss()"
-    return LOSS_MAP[loss_function]
-
-
-
-def generate_dataset_code(cfg: Dict) -> List[str]:
-    batch_size = cfg["batch_size"]
-    if cfg["dataset_source"] == "builtin":
-        dataset_name = cfg["builtin_dataset"]
-        if dataset_name == "mnist":
-            dataset_class = "datasets.MNIST"
-        elif dataset_name == "fashion_mnist":
-            dataset_class = "datasets.FashionMNIST"
-        else:
-            dataset_class = "datasets.CIFAR10"
-
-        return [
-            "transform = transforms.ToTensor()",
-            f'train_dataset = {dataset_class}(root="data", train=True, download=True, transform=transform)',
-            f'test_dataset = {dataset_class}(root="data", train=False, download=True, transform=transform)',
-            f"train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)",
-            f"test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)",
-        ]
-
-    n_samples = int(cfg["n_samples"])
-    input_dim = int(cfg["input_dim"])
-    noise_std = float(cfg["noise_std"])
-
-    if cfg["synthetic_task"] == "normal_regression":
-        return [
-            f"X = torch.randn({n_samples}, {input_dim})",
-            f"true_w = torch.randn({input_dim}, 1)",
-            f"noise = {noise_std} * torch.randn({n_samples}, 1)",
-            "y = X @ true_w + 2.0 + noise",
-            "dataset = TensorDataset(X, y)",
-            f"train_loader = DataLoader(dataset, batch_size={batch_size}, shuffle=True)",
-        ]
-
-    half = n_samples // 2
-    remain = n_samples - half
-    return [
-        f"x0 = torch.randn({half}, {input_dim}) - 2.0",
-        f"x1 = torch.randn({remain}, {input_dim}) + 2.0",
-        "X = torch.cat([x0, x1], dim=0)",
-        f"y = torch.cat([torch.zeros({half}, dtype=torch.long), torch.ones({remain}, dtype=torch.long)])",
-        "dataset = TensorDataset(X, y)",
-        f"train_loader = DataLoader(dataset, batch_size={batch_size}, shuffle=True)",
-    ]
+layers.append(nn.Linear(prev_dim, output_dim))
+model = nn.Sequential(*layers)
+"""
 
 
+def generate_pytorch_code(config: dict) -> str:
+    dataset_name = config["dataset_name"]
+    optimizer_code = _optimizer_code(config["optimizer"], config["learning_rate"])
+    dataset_section = _dataset_code(config)
+    model_section = _model_code(config)
 
-def generate_model_code(cfg: Dict) -> List[str]:
-    input_dim = get_input_dim(cfg)
-    output_dim = get_output_dim(cfg)
+    extra_import = ""
+    if dataset_name in ["mnist", "fashion_mnist"]:
+        extra_import = "from torchvision import datasets, transforms\n"
 
-    if cfg["model_type"] == "custom_formula":
-        formula = cfg.get("custom_formula", "y = w * x + b")
-        return [
-            "# 当前为自定义公式模式。为了安全，页面端只生成示意代码，不直接执行。",
-            f"# 你的输入公式：{formula}",
-            "class CustomModel(nn.Module):",
-            "    def __init__(self):",
-            "        super().__init__()",
-            "        self.w = nn.Parameter(torch.randn(1))",
-            "        self.b = nn.Parameter(torch.randn(1))",
-            "",
-            "    def forward(self, x):",
-            "        return self.w * x + self.b",
-            "",
-            "model = CustomModel()",
-        ]
+    return f'''import torch
+import torch.nn as nn
+from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import load_iris, load_breast_cancer, load_digits
 
-    layers = []
-    if cfg["dataset_source"] == "builtin":
-        layers.append("nn.Flatten()")
+{extra_import}
+# =========================
+# DeepLearning 模块自动生成 PyTorch 示例代码
+# =========================
 
-    if cfg["model_type"] == "linear_model":
-        layers.append(f"nn.Linear({input_dim}, {output_dim})")
+{dataset_section}
+
+{model_section}
+
+# 3. 定义损失函数与优化器
+if task_type == "regression":
+    criterion = nn.MSELoss()
+else:
+    criterion = nn.CrossEntropyLoss()
+
+optimizer = {optimizer_code}
+epochs = {config["epochs"]}
+
+train_loss_list = []
+test_loss_list = []
+train_acc_list = []
+test_acc_list = []
+
+def prepare_x(x):
+    if x.ndim > 2:
+        x = x.view(x.size(0), -1)
+    return x.float()
+
+def evaluate(loader):
+    model.eval()
+    total_loss = 0.0
+    total_samples = 0
+    correct = 0
+
+    with torch.no_grad():
+        for xb, yb in loader:
+            xb = prepare_x(xb)
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            total_loss += loss.item() * xb.size(0)
+            total_samples += xb.size(0)
+
+            if task_type == "classification":
+                correct += (pred.argmax(dim=1) == yb).sum().item()
+
+    avg_loss = total_loss / total_samples
+    if task_type == "classification":
+        acc = correct / total_samples
     else:
-        prev = input_dim
-        hidden_layers = parse_hidden_layers(cfg["hidden_layers"])
-        for hidden_dim in hidden_layers:
-            layers.append(f"nn.Linear({prev}, {hidden_dim})")
-            layers.append(ACTIVATION_MAP[cfg["activation"]])
-            if float(cfg["dropout"]) > 0:
-                layers.append(f"nn.Dropout({float(cfg['dropout'])})")
-            prev = hidden_dim
-        layers.append(f"nn.Linear({prev}, {output_dim})")
+        acc = float("nan")
 
-    lines = ["model = nn.Sequential("]
-    lines.extend([f"    {layer}," for layer in layers])
-    lines.append(")")
-    return lines
+    return avg_loss, acc
 
+# 4. 开始训练
+for epoch in range(1, epochs + 1):
+    model.train()
+    train_loss_sum = 0.0
+    train_samples = 0
+    train_correct = 0
 
+    for xb, yb in train_loader:
+        xb = prepare_x(xb)
 
-def generate_train_loop_code(cfg: Dict) -> List[str]:
-    task = get_task_type(cfg)
-    lr = float(cfg["learning_rate"])
-    epochs = int(cfg["epochs"])
-    optimizer_cls = OPTIMIZER_MAP[cfg["optimizer"]]
-    loss_code = get_loss_code(cfg)
+        optimizer.zero_grad()
+        pred = model(xb)
+        loss = criterion(pred, yb)
+        loss.backward()
+        optimizer.step()
 
-    if task == "regression":
-        target_expr = "y_batch"
-        metrics_block = [
-            "    avg_loss = total_loss / total_samples",
-            '    print(f"epoch={epoch + 1:03d} loss={avg_loss:.6f}")',
-        ]
+        batch_size = xb.size(0)
+        train_loss_sum += loss.item() * batch_size
+        train_samples += batch_size
+
+        if task_type == "classification":
+            train_correct += (pred.argmax(dim=1) == yb).sum().item()
+
+    train_loss = train_loss_sum / train_samples
+
+    if task_type == "classification":
+        train_acc = train_correct / train_samples
     else:
-        target_expr = "y_batch"
-        metrics_block = [
-            "    avg_loss = total_loss / total_samples",
-            "    acc = total_correct / total_samples",
-            '    print(f"epoch={epoch + 1:03d} loss={avg_loss:.6f} acc={acc:.4f}")',
-        ]
+        train_acc = float("nan")
 
-    lines = [
-        'device = torch.device("cuda" if torch.cuda.is_available() else "cpu")',
-        "model = model.to(device)",
-        f"criterion = {loss_code}",
-        f"optimizer = {optimizer_cls}(model.parameters(), lr={lr})",
-        "loss_history = []",
-        "",
-        f"for epoch in range({epochs}):",
-        "    model.train()",
-        "    total_loss = 0.0",
-        "    total_correct = 0",
-        "    total_samples = 0",
-        "",
-        "    for x_batch, y_batch in train_loader:",
-        "        x_batch = x_batch.to(device)",
-        f"        y_batch = {target_expr}.to(device)",
-        "",
-        "        pred = model(x_batch)",
-    ]
+    test_loss, test_acc = evaluate(test_loader)
 
-    if task == "regression":
-        lines.extend([
-            "        loss = criterion(pred, y_batch)",
-            "        total_samples += y_batch.size(0)",
-        ])
-    else:
-        lines.extend([
-            "        loss = criterion(pred, y_batch)",
-            "        total_correct += (pred.argmax(dim=1) == y_batch).sum().item()",
-            "        total_samples += y_batch.size(0)",
-        ])
+    train_loss_list.append(train_loss)
+    test_loss_list.append(test_loss)
+    train_acc_list.append(train_acc)
+    test_acc_list.append(test_acc)
 
-    lines.extend([
-        "        optimizer.zero_grad()",
-        "        loss.backward()",
-        "        optimizer.step()",
-        "        total_loss += loss.item() * y_batch.size(0)",
-        "",
-        "    loss_history.append(total_loss / total_samples)",
-    ])
-    lines.extend(metrics_block)
-    lines.extend([
-        "",
-        "plt.plot(loss_history)",
-        'plt.title("Training Loss")',
-        'plt.xlabel("Epoch")',
-        'plt.ylabel("Loss")',
-        "plt.show()",
-    ])
-    return lines
+    print(
+        f"Epoch {{epoch:03d}} | "
+        f"Train Loss={{train_loss:.4f}} | Test Loss={{test_loss:.4f}} | "
+        f"Train Acc={{train_acc if train_acc == train_acc else 'N/A'}} | "
+        f"Test Acc={{test_acc if test_acc == test_acc else 'N/A'}}"
+    )
 
+# 5. 可视化训练过程
+epochs_x = list(range(1, epochs + 1))
 
+plt.figure(figsize=(10, 6))
+plt.plot(epochs_x, train_loss_list, label="Train Loss", color="royalblue", linewidth=2)
+plt.plot(epochs_x, test_loss_list, label="Test Loss", color="orange", linewidth=2)
+plt.plot(epochs_x, train_acc_list, label="Train Acc", color="green", linewidth=2)
+plt.plot(epochs_x, test_acc_list, label="Test Acc", color="red", linewidth=2)
 
-def generate_pytorch_code(cfg: Dict) -> str:
-    lines = [
-        "import torch",
-        "import torch.nn as nn",
-        "import torch.optim as optim",
-        "import matplotlib.pyplot as plt",
-        "from torch.utils.data import DataLoader, TensorDataset",
-    ]
-
-    if cfg["dataset_source"] == "builtin":
-        lines.append("from torchvision import datasets, transforms")
-
-    lines.extend(["", "# ===== 1. 数据集 ====="])
-    lines.extend(generate_dataset_code(cfg))
-    lines.extend(["", "# ===== 2. 模型 ====="])
-    lines.extend(generate_model_code(cfg))
-    lines.extend(["", "# ===== 3. 训练 ====="])
-    lines.extend(generate_train_loop_code(cfg))
-    return "\n".join(lines)
+plt.xlabel("Epoch")
+plt.ylabel("Metric")
+plt.title("Training Process")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+'''

@@ -1,124 +1,173 @@
 from django import forms
 
+DATASET_CHOICES = [
+    ("normal_regression", "随机正态分布回归"),
+    ("normal_classification", "随机正态分布分类"),
+    ("iris", "Iris 鸢尾花分类"),
+    ("breast_cancer", "Breast Cancer 乳腺癌分类"),
+    ("digits", "Digits 手写数字分类（8x8）"),
+    ("mnist", "MNIST 手写数字（在线下载）"),
+    ("fashion_mnist", "FashionMNIST 服饰分类（在线下载）"),
+]
 
-class DeepLearningConfigForm(forms.Form):
-    DATASET_SOURCE_CHOICES = [
-        ("builtin", "内置公开数据集"),
-        ("synthetic", "随机生成数据集"),
-    ]
+MODEL_CHOICES = [
+    ("linear", "线性模型"),
+    ("mlp", "多层感知机 MLP"),
+    ("custom_formula", "自定义公式（只生成代码，不做在线训练）"),
+]
 
-    BUILTIN_DATASET_CHOICES = [
-        ("mnist", "MNIST 手写数字"),
-        ("fashion_mnist", "FashionMNIST 服饰分类"),
-        ("cifar10", "CIFAR10 彩色图像分类"),
-    ]
+ACTIVATION_CHOICES = [
+    ("relu", "ReLU"),
+    ("tanh", "Tanh"),
+    ("sigmoid", "Sigmoid"),
+    ("leaky_relu", "LeakyReLU"),
+    ("none", "None"),
+]
 
-    SYNTHETIC_TASK_CHOICES = [
-        ("normal_regression", "正态分布回归数据"),
-        ("normal_classification", "正态分布二分类数据"),
-    ]
+OPTIMIZER_CHOICES = [
+    ("sgd", "SGD"),
+    ("adam", "Adam"),
+    ("adamw", "AdamW"),
+    ("rmsprop", "RMSprop"),
+]
 
-    MODEL_TYPE_CHOICES = [
-        ("linear_model", "线性模型（如 y = Wx + b）"),
-        ("mlp", "多层感知机 MLP"),
-        ("custom_formula", "自定义公式（先只生成代码，不直接执行）"),
-    ]
+DEFAULT_FORM_DATA = {
+    "dataset_name": "normal_regression",
+    "num_samples": 800,
+    "input_dim": 1,
+    "noise_std": 0.2,
+    "num_classes": 2,
+    "test_size": 0.2,
+    "random_seed": 42,
+    "normalize_data": True,
+    "model_name": "linear",
+    "custom_formula": "y = w*x + b",
+    "hidden_sizes": "64,32",
+    "activation": "relu",
+    "dropout": 0.0,
+    "optimizer": "adam",
+    "learning_rate": 0.01,
+    "batch_size": 32,
+    "epochs": 30,
+}
 
-    ACTIVATION_CHOICES = [
-        ("relu", "ReLU"),
-        ("sigmoid", "Sigmoid"),
-        ("tanh", "Tanh"),
-        ("leaky_relu", "LeakyReLU"),
-    ]
 
-    OPTIMIZER_CHOICES = [
-        ("sgd", "SGD"),
-        ("adam", "Adam"),
-        ("adagrad", "Adagrad"),
-        ("rmsprop", "RMSprop"),
-    ]
-
-    LOSS_CHOICES = [
-        ("auto", "自动匹配（推荐）"),
-        ("mse", "MSELoss"),
-        ("cross_entropy", "CrossEntropyLoss"),
-    ]
-
-    dataset_source = forms.ChoiceField(
-        label="数据集来源",
-        choices=DATASET_SOURCE_CHOICES,
-        initial="synthetic",
+class DeepLearningBuilderForm(forms.Form):
+    dataset_name = forms.ChoiceField(
+        label="数据集",
+        choices=DATASET_CHOICES,
+        initial=DEFAULT_FORM_DATA["dataset_name"],
     )
-    builtin_dataset = forms.ChoiceField(
-        label="内置数据集",
-        choices=BUILTIN_DATASET_CHOICES,
+    num_samples = forms.IntegerField(
+        label="样本数",
+        min_value=100,
+        max_value=50000,
+        initial=DEFAULT_FORM_DATA["num_samples"],
+    )
+    input_dim = forms.IntegerField(
+        label="输入维度",
+        min_value=1,
+        max_value=2048,
+        initial=DEFAULT_FORM_DATA["input_dim"],
+    )
+    noise_std = forms.FloatField(
+        label="噪声强度",
+        min_value=0.0,
+        max_value=10.0,
+        initial=DEFAULT_FORM_DATA["noise_std"],
+    )
+    num_classes = forms.IntegerField(
+        label="类别数（仅随机分类）",
+        min_value=2,
+        max_value=20,
+        initial=DEFAULT_FORM_DATA["num_classes"],
+    )
+    test_size = forms.FloatField(
+        label="测试集比例",
+        min_value=0.1,
+        max_value=0.5,
+        initial=DEFAULT_FORM_DATA["test_size"],
+    )
+    random_seed = forms.IntegerField(
+        label="随机种子",
+        min_value=0,
+        max_value=999999,
+        initial=DEFAULT_FORM_DATA["random_seed"],
+    )
+    normalize_data = forms.BooleanField(
+        label="标准化输入数据",
         required=False,
-        initial="mnist",
+        initial=DEFAULT_FORM_DATA["normalize_data"],
     )
-    synthetic_task = forms.ChoiceField(
-        label="随机数据类型",
-        choices=SYNTHETIC_TASK_CHOICES,
-        required=False,
-        initial="normal_regression",
-    )
-    n_samples = forms.IntegerField(label="样本数", min_value=50, max_value=50000, initial=500)
-    input_dim = forms.IntegerField(label="输入维度", min_value=1, max_value=128, initial=1)
-    noise_std = forms.FloatField(label="噪声标准差", min_value=0.0, max_value=10.0, initial=0.1)
 
-    model_type = forms.ChoiceField(label="模型类型", choices=MODEL_TYPE_CHOICES, initial="linear_model")
+    model_name = forms.ChoiceField(
+        label="模型",
+        choices=MODEL_CHOICES,
+        initial=DEFAULT_FORM_DATA["model_name"],
+    )
     custom_formula = forms.CharField(
         label="自定义公式",
         required=False,
-        initial="y = w * x + b",
-        widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="这部分目前只用于生成示意代码，不在服务器端直接执行。",
+        initial=DEFAULT_FORM_DATA["custom_formula"],
     )
-    hidden_layers = forms.CharField(
-        label="隐藏层结构",
+    hidden_sizes = forms.CharField(
+        label="隐藏层",
         required=False,
-        initial="64,32",
-        help_text="仅 MLP 使用，示例：64,32",
+        initial=DEFAULT_FORM_DATA["hidden_sizes"],
+        help_text="例如：64,32,16",
     )
-    activation = forms.ChoiceField(label="激活函数", choices=ACTIVATION_CHOICES, initial="relu")
-    dropout = forms.FloatField(label="Dropout", min_value=0.0, max_value=0.9, initial=0.0)
+    activation = forms.ChoiceField(
+        label="激活函数",
+        choices=ACTIVATION_CHOICES,
+        initial=DEFAULT_FORM_DATA["activation"],
+    )
+    dropout = forms.FloatField(
+        label="Dropout",
+        min_value=0.0,
+        max_value=0.9,
+        initial=DEFAULT_FORM_DATA["dropout"],
+    )
+    optimizer = forms.ChoiceField(
+        label="优化器",
+        choices=OPTIMIZER_CHOICES,
+        initial=DEFAULT_FORM_DATA["optimizer"],
+    )
+    learning_rate = forms.FloatField(
+        label="学习率",
+        min_value=1e-6,
+        max_value=10.0,
+        initial=DEFAULT_FORM_DATA["learning_rate"],
+    )
+    batch_size = forms.IntegerField(
+        label="Batch Size",
+        min_value=1,
+        max_value=4096,
+        initial=DEFAULT_FORM_DATA["batch_size"],
+    )
+    epochs = forms.IntegerField(
+        label="Epochs",
+        min_value=1,
+        max_value=500,
+        initial=DEFAULT_FORM_DATA["epochs"],
+    )
 
-    optimizer = forms.ChoiceField(label="优化器", choices=OPTIMIZER_CHOICES, initial="adam")
-    loss_function = forms.ChoiceField(label="损失函数", choices=LOSS_CHOICES, initial="auto")
-    learning_rate = forms.FloatField(label="学习率", min_value=0.00001, max_value=1.0, initial=0.01)
-    batch_size = forms.IntegerField(label="Batch Size", min_value=1, max_value=4096, initial=32)
-    epochs = forms.IntegerField(label="训练轮数 Epochs", min_value=1, max_value=1000, initial=30)
-    run_demo = forms.BooleanField(label="在页面中直接跑一个演示训练", required=False, initial=True)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def clean_hidden_layers(self):
-        raw = self.cleaned_data.get("hidden_layers", "")
-        if not raw.strip():
-            return "64,32"
-        parts = [p.strip() for p in raw.split(",") if p.strip()]
-        if not all(p.isdigit() and int(p) > 0 for p in parts):
-            raise forms.ValidationError("隐藏层请写成 64,32 这样的正整数逗号分隔格式。")
-        return ",".join(parts)
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.update({"class": "dl-checkbox"})
+            else:
+                field.widget.attrs.update({"class": "dl-input"})
 
-    def clean(self):
-        cleaned = super().clean()
-        dataset_source = cleaned.get("dataset_source")
-        model_type = cleaned.get("model_type")
-        loss_function = cleaned.get("loss_function")
-        synthetic_task = cleaned.get("synthetic_task")
-
-        if dataset_source == "builtin" and not cleaned.get("builtin_dataset"):
-            self.add_error("builtin_dataset", "请选择一个内置数据集。")
-
-        if dataset_source == "synthetic" and not synthetic_task:
-            self.add_error("synthetic_task", "请选择一个随机数据任务。")
-
-        task = "classification" if dataset_source == "builtin" or synthetic_task == "normal_classification" else "regression"
-
-        if loss_function == "mse" and task == "classification":
-            self.add_error("loss_function", "分类任务不建议使用 MSELoss。")
-        if loss_function == "cross_entropy" and task == "regression":
-            self.add_error("loss_function", "回归任务不建议使用 CrossEntropyLoss。")
-
-        if model_type == "custom_formula" and cleaned.get("run_demo"):
-            cleaned["run_demo"] = False
-
-        return cleaned
+    def clean_hidden_sizes(self):
+        value = self.cleaned_data.get("hidden_sizes", "").strip()
+        if not value:
+            return ""
+        try:
+            parsed = [int(x.strip()) for x in value.split(",") if x.strip()]
+            if any(x <= 0 for x in parsed):
+                raise forms.ValidationError("隐藏层神经元个数必须为正整数。")
+        except ValueError:
+            raise forms.ValidationError("隐藏层格式错误，请写成 64,32,16 这种形式。")
+        return value
