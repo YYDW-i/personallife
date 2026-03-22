@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "accounts",
     "analytics_app",
     "profiles",
+    "deeplearning",
 ]
 
 MIDDLEWARE = [

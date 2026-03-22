@@ -28,4 +28,5 @@ urlpatterns = [
     path("news/", include("news.urls")),
     path("analytics/", include("analytics_app.urls")),
     path("settings/", include("profiles.urls")),
+    path('deeplearning/', include('deeplearning.urls')),
 ]

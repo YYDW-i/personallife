@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .dl-page {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+  }
+  .dl-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    backdrop-filter: blur(12px);
+  }
+  .dl-card h2, .dl-card h3 {
+    margin-top: 0;
+  }
+  .dl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .dl-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dl-field input,
+  .dl-field select,
+  .dl-field textarea {
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.05);
+    color: inherit;
+  }
+  .dl-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .dl-btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .dl-btn-primary {
+    background: rgba(255,255,255,0.16);
+    color: inherit;
+  }
+  .dl-help {
+    opacity: 0.8;
+    font-size: 0.92rem;
+  }
+  .dl-code {
+    white-space: pre-wrap;
+    overflow-x: auto;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(0,0,0,0.24);
+    font-family: Consolas, Monaco, monospace;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .dl-img {
+    width: 100%;
+    border-radius: 16px;
+    margin-top: 12px;
+  }
+  .dl-summary {
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255,255,255,0.05);
+    margin-top: 16px;
+  }
+  .dl-errors {
+    color: #ffb3b3;
+    margin: 6px 0 0 0;
+    padding-left: 18px;
+  }
+  @media (max-width: 1100px) {
+    .dl-page {
+      grid-template-columns: 1fr;
+    }
+    .dl-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="dl-page">
+  <div class="dl-card">
+    <h2>DeepLearning 模块</h2>
+    <p>这个页面是一个面向初学者的 PyTorch 学习配置器。你可以选数据集、选模型、选层数、选激活函数与优化器，然后自动得到一份可以直接运行的 PyTorch 代码。</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <ul class="dl-errors">
+          {% for err in form.non_field_errors %}
+            <li>{{ err }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="dl-card" style="padding:16px; margin-bottom:16px;">
+        <h3>一、数据集选择</h3>
+        <div class="dl-grid">
+          <div class="dl-field">
+            <label>{{ form.dataset_source.label }}</label>
+            {{ form.dataset_source }}
+          </div>
+          <div class="dl-field js-builtin">
+            <label>{{ form.builtin_dataset.label }}</label>
+            {{ form.builtin_dataset }}
+          </div>
+          <div class="dl-field js-synthetic">
+            <label>{{ form.synthetic_task.label }}</label>
+            {{ form.synthetic_task }}
+          </div>
+          <div class="dl-field js-synthetic">
+            <label>{{ form.n_samples.label }}</label>
+            {{ form.n_samples }}
+          </div>
+          <div class="dl-field js-synthetic">
+            <label>{{ form.input_dim.label }}</label>
+            {{ form.input_dim }}
+          </div>
+          <div class="dl-field js-synthetic">
+            <label>{{ form.noise_std.label }}</label>
+            {{ form.noise_std }}
+          </div>
+        </div>
+      </div>
+
+      <div class="dl-card" style="padding:16px; margin-bottom:16px;">
+        <h3>二、模型与网络结构</h3>
+        <div class="dl-grid">
+          <div class="dl-field">
+            <label>{{ form.model_type.label }}</label>
+            {{ form.model_type }}
+          </div>
+          <div class="dl-field js-hidden">
+            <label>{{ form.hidden_layers.label }}</label>
+            {{ form.hidden_layers }}
+            <div class="dl-help">{{ form.hidden_layers.help_text }}</div>
+          </div>
+          <div class="dl-field js-hidden">
+            <label>{{ form.activation.label }}</label>
+            {{ form.activation }}
+          </div>
+          <div class="dl-field js-hidden">
+            <label>{{ form.dropout.label }}</label>
+            {{ form.dropout }}
+          </div>
+        </div>
+        <div class="dl-field js-custom">
+          <label>{{ form.custom_formula.label }}</label>
+          {{ form.custom_formula }}
+          <div class="dl-help">{{ form.custom_formula.help_text }}</div>
+        </div>
+      </div>
+
+      <div class="dl-card" style="padding:16px; margin-bottom:16px;">
+        <h3>三、训练参数</h3>
+        <div class="dl-grid">
+          <div class="dl-field">
+            <label>{{ form.optimizer.label }}</label>
+            {{ form.optimizer }}
+          </div>
+          <div class="dl-field">
+            <label>{{ form.loss_function.label }}</label>
+            {{ form.loss_function }}
+          </div>
+          <div class="dl-field">
+            <label>{{ form.learning_rate.label }}</label>
+            {{ form.learning_rate }}
+          </div>
+          <div class="dl-field">
+            <label>{{ form.batch_size.label }}</label>
+            {{ form.batch_size }}
+          </div>
+          <div class="dl-field">
+            <label>{{ form.epochs.label }}</label>
+            {{ form.epochs }}
+          </div>
+          <div class="dl-field" style="justify-content:center;">
+            <label>{{ form.run_demo.label }}</label>
+            {{ form.run_demo }}
+          </div>
+        </div>
+      </div>
+
+      <div class="dl-actions">
+        <button class="dl-btn dl-btn-primary" type="submit">生成 PyTorch 代码</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="dl-card">
+    <h2>结果面板</h2>
+    <p>你每次提交表单后，这里都会出现相应的 PyTorch 代码；如果选择了演示训练，还会显示训练损失曲线。</p>
+
+    {% if generated_code %}
+      <h3>生成代码</h3>
+      <div class="dl-code">{{ generated_code }}</div>
+    {% else %}
+      <div class="dl-summary">当前还没有生成代码。先在左侧完成配置，再点击按钮。</div>
+    {% endif %}
+
+    {% if training_summary %}
+      <div class="dl-summary">
+        <strong>{{ training_summary.message }}</strong><br>
+        {% if training_summary.task %}任务类型：{{ training_summary.task }}<br>{% endif %}
+        {% if training_summary.final_loss %}最终损失：{{ training_summary.final_loss }}<br>{% endif %}
+        {% if training_summary.final_acc %}最终准确率：{{ training_summary.final_acc }}{% endif %}
+      </div>
+    {% endif %}
+
+    {% if plot_base64 %}
+      <h3>训练过程可视化</h3>
+      <img class="dl-img" src="data:image/png;base64,{{ plot_base64 }}" alt="training loss">
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function toggleFields() {
+    const datasetSource = document.getElementById('id_dataset_source')?.value;
+    const modelType = document.getElementById('id_model_type')?.value;
+
+    document.querySelectorAll('.js-builtin').forEach(el => {
+      el.style.display = datasetSource === 'builtin' ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.js-synthetic').forEach(el => {
+      el.style.display = datasetSource === 'synthetic' ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.js-hidden').forEach(el => {
+      el.style.display = modelType === 'mlp' ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.js-custom').forEach(el => {
+      el.style.display = modelType === 'custom_formula' ? 'flex' : 'none';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    toggleFields();
+    document.getElementById('id_dataset_source')?.addEventListener('change', toggleFields);
+    document.getElementById('id_model_type')?.addEventListener('change', toggleFields);
+  });
+</script>
+{% endblock %}
