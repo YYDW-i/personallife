@@ -110,18 +110,18 @@
         </form>
     </div>
 
-    <div class="dl-bottom-grid">
+    <div class="dl-bottom-stack">
         <div class="dl-bottom-panel">
             <div class="panel-header small">
                 <h3>自动生成的 PyTorch 代码</h3>
-                <p>你修改上面的配置后，这里会自动刷新。</p>
+                <p>修改配置后，这里会自动刷新。</p>
             </div>
             <div class="code-box">
                 <pre><code id="code-output">{{ generated_code }}</code></pre>
             </div>
         </div>
 
-        <div class="dl-bottom-panel">
+        <div class="dl-bottom-panel" id="chart-panel">
             <div class="panel-header small">
                 <h3>训练过程动态曲线</h3>
                 <p id="training-status">当前状态：等待训练开始。</p>
@@ -207,6 +207,19 @@ function toggleFieldVisibility() {
         showField("wrap_normalize_data", false);
     } else {
         showField("wrap_normalize_data", true);
+    }
+
+    // 自定义公式模式下禁用训练按钮
+    if (isCustom) {
+        startTrainingBtn.disabled = true;
+        startTrainingBtn.title = "自定义公式模式只支持代码生成，不支持在线训练";
+        startTrainingBtn.style.opacity = "0.5";
+        startTrainingBtn.style.cursor = "not-allowed";
+    } else {
+        startTrainingBtn.disabled = false;
+        startTrainingBtn.title = "";
+        startTrainingBtn.style.opacity = "1";
+        startTrainingBtn.style.cursor = "pointer";
     }
 }
 
@@ -326,6 +339,13 @@ function createEmptyChart() {
 
 let trainingChart = createEmptyChart();
 
+// 窗口大小改变时，让图表重新适应尺寸
+window.addEventListener('resize', () => {
+    if (trainingChart) {
+        trainingChart.resize();
+    }
+});
+
 function resetChart() {
     trainingChart.data.labels = [];
     trainingChart.data.datasets[0].data = [];
@@ -389,6 +409,12 @@ async function startTraining() {
         trainingStatus.textContent = "当前状态：训练中...";
         metricBox.textContent = "训练任务已启动。";
 
+        // 新增：自动滚动到图表区域
+        const chartPanel = document.getElementById("chart-panel");
+        if (chartPanel) {
+            chartPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
         if (pollTimer) {
             clearInterval(pollTimer);
         }
@@ -447,7 +473,7 @@ toggleFieldVisibility();
 .dl-page {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
     color: #eef3ff;
 }
 
@@ -455,9 +481,11 @@ toggleFieldVisibility();
 .dl-bottom-panel {
     background: rgba(22, 34, 67, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 22px;
-    padding: 20px;
+    border-radius: 24px;
+    padding: 24px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(2px);
+    transition: all 0.2s ease;
 }
 
 .panel-header h2,
@@ -469,30 +497,37 @@ toggleFieldVisibility();
 .panel-header p {
     margin: 0;
     color: #bfc8e8;
+    font-size: 0.9rem;
 }
 
 .panel-header.small {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .dl-form {
-    margin-top: 18px;
+    margin-top: 20px;
 }
 
 .form-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(180px, 1fr));
-    gap: 14px;
+    gap: 18px;
 }
 
 .field-card {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    padding: 12px;
+    border-radius: 18px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    transition: all 0.2s;
+}
+
+.field-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255,255,255,0.12);
 }
 
 .field-card-wide {
@@ -500,13 +535,15 @@ toggleFieldVisibility();
 }
 
 .field-card label {
-    font-size: 14px;
+    font-size: 13px;
     color: #d8e1ff;
     font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .field-card small {
     color: #97a8d8;
+    font-size: 11px;
 }
 
 .checkbox-card .checkbox-row {
@@ -518,68 +555,97 @@ toggleFieldVisibility();
 .dl-input {
     width: 100%;
     padding: 10px 12px;
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.10);
     background: rgba(7, 15, 38, 0.65);
     color: #eef3ff;
     outline: none;
     box-sizing: border-box;
+    transition: all 0.2s;
 }
 
 .dl-input:focus {
     border-color: rgba(96, 156, 255, 0.9);
     box-shadow: 0 0 0 3px rgba(96, 156, 255, 0.12);
+    background: rgba(7, 15, 38, 0.8);
 }
 
 .dl-checkbox {
     transform: scale(1.15);
+    accent-color: #5d7cff;
 }
 
 .action-row {
-    margin-top: 18px;
+    margin-top: 24px;
     display: flex;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
 }
 
 .dl-btn {
-    padding: 10px 18px;
-    border-radius: 12px;
+    padding: 10px 22px;
+    border-radius: 40px;
     border: 1px solid rgba(255,255,255,0.10);
     background: rgba(255,255,255,0.06);
     color: #eef3ff;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
 .dl-btn:hover {
     background: rgba(255,255,255,0.12);
+    transform: translateY(-1px);
+}
+
+.dl-btn:active {
+    transform: translateY(1px);
 }
 
 .dl-btn-primary {
     background: linear-gradient(135deg, #5d7cff, #6d5dfc);
     border: none;
+    box-shadow: 0 4px 12px rgba(93, 124, 255, 0.2);
+}
+
+.dl-btn-primary:hover {
+    background: linear-gradient(135deg, #6d8cff, #7d6dfc);
+    box-shadow: 0 6px 14px rgba(93, 124, 255, 0.3);
 }
 
 .tip-row {
-    margin-top: 12px;
+    margin-top: 16px;
     color: #aab8e6;
-    font-size: 13px;
+    font-size: 12px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 12px;
 }
 
-.dl-bottom-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+.dl-bottom-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.dl-bottom-stack .dl-bottom-panel:first-child {
+    /* 代码面板高度可以稍微增加，但保持自适应 */
+    min-height: 480px;   /* 根据实际效果可调，让代码区域有足够空间 */
+}
+
+.dl-bottom-stack .dl-bottom-panel:last-child {
+    /* 曲线图面板高度适当缩小，但保持图表可见 */
+    min-height: 420px;   /* 可根据需要调整 */
 }
 
 .code-box {
-    height: 560px;
+    height: calc(100% - 70px);
     overflow: auto;
-    border-radius: 16px;
+    border-radius: 18px;
     background: rgba(6, 11, 28, 0.92);
     border: 1px solid rgba(255,255,255,0.06);
     padding: 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 .code-box pre {
@@ -591,21 +657,26 @@ toggleFieldVisibility();
 }
 
 .chart-wrap {
-    height: 470px;
-    border-radius: 16px;
+    height: 420px;
+    border-radius: 18px;
     background: rgba(6, 11, 28, 0.72);
     border: 1px solid rgba(255,255,255,0.06);
-    padding: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
 }
 
 .metric-box {
-    margin-top: 14px;
-    padding: 14px;
-    border-radius: 14px;
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: 16px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.06);
     color: #dfe7ff;
     line-height: 1.8;
+    font-size: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 16px;
 }
 
 @media (max-width: 1200px) {
@@ -619,6 +690,10 @@ toggleFieldVisibility();
 
     .field-card-wide {
         grid-column: span 2;
+    }
+
+    .metric-box {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -637,6 +712,11 @@ toggleFieldVisibility();
 
     .chart-wrap {
         height: 360px;
+    }
+
+    .dl-top-panel,
+    .dl-bottom-panel {
+        padding: 16px;
     }
 }
 </style>
