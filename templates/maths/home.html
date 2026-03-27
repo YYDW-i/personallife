@@ -295,7 +295,7 @@ function updatePanels(){
     document.getElementById("jacobianHint").style.display = (mlOp === "jacobian") ? "block" : "none";
     document.getElementById("gdParams").style.display = (mlOp === "gd_demo") ? "flex" : "none";
   }
-  document.getElementById("mlOp").addEventListener("change", updatePanels);
+  
 
   if (mode === "linear") {
     const op = document.getElementById("linOp").value;
@@ -319,18 +319,8 @@ document.getElementById("linOp").addEventListener("change", function() {
   document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
 });
 
-// 同时在 updatePanels 中也要根据当前 mode 和 op 初始化显示
-function updatePanels() {
-  const mode = document.getElementById("mode").value;
-  // ... 原有其他面板隐藏逻辑 ...
 
-  document.getElementById("linearArgs").style.display = (mode === "linear") ? "flex" : "none";
-  if (mode === "linear") {
-    const op = document.getElementById("linOp").value;
-    document.getElementById("linExtra").style.display = (op === "solve") ? "flex" : "none";
-  }
-}
-
+document.getElementById("mlOp").addEventListener("change", updatePanels);
 document.getElementById("mode").addEventListener("change", updatePanels);
 document.getElementById("clearBtn").addEventListener("click", () => {
   document.getElementById("mainInput").value = "";
@@ -436,5 +426,6 @@ async function run(){
 }
 
 updatePanels();
+document.getElementById('mode').addEventListener('change', updatePanels);
 </script>
 {% endblock %}
