@@ -244,21 +244,47 @@ model = nn.Linear(input_dim, output_dim)
 """
 
     if model_name == "custom_formula":
-        formula = config.get("custom_formula", "y = w*x + b")
+        formula = (config.get("custom_formula", "") or "x @ w + b").strip()
+        if "=" in formula:
+            left, right = formula.split("=", 1)
+            if left.strip() == "y":
+                formula = right.strip()
+
         return f'''
-# 2. 构造自定义模型
-class CustomModel(nn.Module):
-    def __init__(self, input_dim):
-        super().__init__()
-        self.linear = nn.Linear(input_dim, 1)
+    # 2. 构造自定义公式模型
+    sin = torch.sin
+    cos = torch.cos
+    tanh = torch.tanh
+    sigmoid = torch.sigmoid
+    relu = torch.relu
+    exp = torch.exp
+    log = lambda x: torch.log(torch.clamp(x, min=1e-6))
+    sqrt = lambda x: torch.sqrt(torch.clamp(x, min=1e-6))
+    abs = torch.abs
+    pi = torch.pi
 
-    def forward(self, x):
-        # 你填写的公式：{formula}
-        # 这里先给一个最简单示例，后续你可以继续改
-        return self.linear(x)
+    class CustomFormulaModel(nn.Module):
+        def __init__(self, input_dim, output_dim, task_type):
+            super().__init__()
+            self.output_dim = output_dim
+            self.task_type = task_type
+            self.w = nn.Parameter(torch.randn(input_dim, output_dim) * 0.1)
+            self.b = nn.Parameter(torch.zeros(output_dim))
 
-model = CustomModel(input_dim)
-'''
+        def forward(self, x):
+            y = {formula}
+            if y.ndim == 1:
+                y = y.unsqueeze(1)
+
+            if self.task_type == "regression" and y.shape[1] != 1:
+                raise RuntimeError(f"回归任务要求输出形状为 [batch, 1]，当前为 {{tuple(y.shape)}}")
+            if self.task_type == "classification" and y.shape[1] != self.output_dim:
+                raise RuntimeError(f"分类任务要求输出形状为 [batch, {{self.output_dim}}]，当前为 {{tuple(y.shape)}}")
+
+            return y
+
+    model = CustomFormulaModel(input_dim, output_dim, task_type)
+    '''
 
     hidden_sizes = hidden_sizes or [64, 32]
     hidden_text = ", ".join(str(x) for x in hidden_sizes)

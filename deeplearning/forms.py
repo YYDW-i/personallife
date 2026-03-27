@@ -13,7 +13,7 @@ DATASET_CHOICES = [
 MODEL_CHOICES = [
     ("linear", "线性模型"),
     ("mlp", "多层感知机 MLP"),
-    ("custom_formula", "自定义公式（只生成代码，不做在线训练）"),
+    ("custom_formula", "自定义公式"),
 ]
 
 ACTIVATION_CHOICES = [

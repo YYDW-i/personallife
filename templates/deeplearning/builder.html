@@ -233,12 +233,11 @@ function toggleFieldVisibility() {
         showField("wrap_normalize_data", true);
     }
 
-    // 自定义公式模式下禁用训练按钮
     if (isCustom) {
-        startTrainingBtn.disabled = true;
-        startTrainingBtn.title = "自定义公式模式只支持代码生成，不支持在线训练";
-        startTrainingBtn.style.opacity = "0.5";
-        startTrainingBtn.style.cursor = "not-allowed";
+        startTrainingBtn.disabled = false;
+        startTrainingBtn.title = "自定义公式已支持在线训练；回归请输出 [batch,1]，分类请输出 [batch,num_classes] 的 logits";
+        startTrainingBtn.style.opacity = "1";
+        startTrainingBtn.style.cursor = "pointer";
     } else {
         startTrainingBtn.disabled = false;
         startTrainingBtn.title = "";

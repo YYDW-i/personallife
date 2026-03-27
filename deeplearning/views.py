@@ -31,6 +31,7 @@ def _normalize_config(raw_data: dict) -> dict:
 
     config["hidden_sizes_list"] = hidden_list
     config["normalize_data"] = bool(config.get("normalize_data", False))
+    config["custom_formula"] = (config.get("custom_formula", "") or "").strip() or "x @ w + b"
     return config
 
 
@@ -83,15 +84,6 @@ def start_training_api(request):
         )
 
     config = _normalize_config(form.cleaned_data)
-
-    if config["model_name"] == "custom_formula":
-        return JsonResponse(
-            {
-                "ok": False,
-                "message": "自定义公式模式当前只支持代码生成，不支持网页端在线训练。",
-            },
-            status=400,
-        )
 
     job_id = start_training_job(config)
 

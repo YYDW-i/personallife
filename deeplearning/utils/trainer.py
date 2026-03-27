@@ -3,6 +3,7 @@ import threading
 import time
 import traceback
 import uuid
+import ast
 
 import numpy as np
 import torch
@@ -106,6 +107,107 @@ def _get_activation(name: str):
     return nn.Identity
 
 
+_ALLOWED_FORMULA_FUNCS = {
+    "sin": torch.sin,
+    "cos": torch.cos,
+    "tanh": torch.tanh,
+    "sigmoid": torch.sigmoid,
+    "relu": torch.relu,
+    "exp": torch.exp,
+    "log": lambda x: torch.log(torch.clamp(x, min=1e-6)),
+    "sqrt": lambda x: torch.sqrt(torch.clamp(x, min=1e-6)),
+    "abs": torch.abs,
+}
+
+_ALLOWED_FORMULA_NAMES = {"x", "w", "b", "pi", *list(_ALLOWED_FORMULA_FUNCS.keys())}
+
+_ALLOWED_AST_NODES = (
+    ast.Expression,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.Pow,
+    ast.MatMult,
+    ast.UAdd,
+    ast.USub,
+    ast.Name,
+    ast.Load,
+    ast.Call,
+    ast.Constant,
+)
+
+
+def _compile_formula(formula_text: str):
+    expr = (formula_text or "x @ w + b").strip()
+
+    if "=" in expr:
+        left, right = expr.split("=", 1)
+        if left.strip() == "y":
+            expr = right.strip()
+
+    tree = ast.parse(expr, mode="eval")
+
+    for node in ast.walk(tree):
+        if not isinstance(node, _ALLOWED_AST_NODES):
+            raise RuntimeError(f"公式里包含暂不支持的语法：{type(node).__name__}")
+
+        if isinstance(node, ast.Name) and node.id not in _ALLOWED_FORMULA_NAMES:
+            raise RuntimeError(f"公式里包含未允许的变量或函数：{node.id}")
+
+        if isinstance(node, ast.Call):
+            if not isinstance(node.func, ast.Name) or node.func.id not in _ALLOWED_FORMULA_FUNCS:
+                raise RuntimeError("公式里只允许调用白名单函数，例如 sin、cos、tanh、relu 等。")
+            if node.keywords:
+                raise RuntimeError("自定义公式暂不支持关键字参数写法。")
+
+    return compile(tree, "<custom_formula>", "eval"), expr
+
+
+class FormulaModel(nn.Module):
+    def __init__(self, input_dim: int, output_dim: int, formula_text: str, task_type: str):
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.task_type = task_type
+
+        self.w = nn.Parameter(torch.randn(input_dim, output_dim) * 0.1)
+        self.b = nn.Parameter(torch.zeros(output_dim))
+
+        self._formula_code, self.formula_expr = _compile_formula(formula_text)
+
+    def forward(self, x):
+        env = {
+            "x": x,
+            "w": self.w,
+            "b": self.b,
+            "pi": torch.pi,
+            **_ALLOWED_FORMULA_FUNCS,
+        }
+
+        y = eval(self._formula_code, {"__builtins__": {}}, env)
+
+        if not torch.is_tensor(y):
+            raise RuntimeError("自定义公式的输出不是张量。")
+
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+
+        if self.task_type == "regression":
+            if y.ndim != 2 or y.shape[1] != 1:
+                raise RuntimeError(
+                    f"回归任务要求公式输出形状为 [batch, 1]，当前得到 {tuple(y.shape)}。"
+                )
+        else:
+            if y.ndim != 2 or y.shape[1] != self.output_dim:
+                raise RuntimeError(
+                    f"分类任务要求公式输出形状为 [batch, {self.output_dim}]，当前得到 {tuple(y.shape)}。"
+                )
+
+        return y
+
 def _build_model(config, input_dim, output_dim, task_type):
     model_name = config["model_name"]
 
@@ -132,7 +234,16 @@ def _build_model(config, input_dim, output_dim, task_type):
         layers.append(nn.Linear(prev_dim, output_dim))
         return nn.Sequential(*layers)
 
-    raise RuntimeError("自定义公式模式当前只支持代码生成，不支持网页端在线训练。")
+    if model_name == "custom_formula":
+        formula = config.get("custom_formula", "").strip() or "x @ w + b"
+        return FormulaModel(
+            input_dim=input_dim,
+            output_dim=output_dim,
+            formula_text=formula,
+            task_type=task_type,
+        )
+
+    raise RuntimeError(f"暂不支持的模型类型：{model_name}")
 
 
 def _build_optimizer(config, model):
