@@ -100,6 +100,7 @@ def start_training_api(request):
             "ok": True,
             "job_id": job_id,
             "message": "训练任务已启动。",
+            "total_epochs": int(config["epochs"]),
         }
     )
 

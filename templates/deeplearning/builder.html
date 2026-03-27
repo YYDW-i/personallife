@@ -154,6 +154,24 @@ const trainingStatusUrlTemplate = "{% url 'deeplearning:training_status' 'JOB_ID
 let currentJobId = null;
 let pollTimer = null;
 let debounceTimer = null;
+let fixedEpochLimit = 0;
+
+function getEpochLimitFromForm() {
+    const raw = Number(document.getElementById("id_epochs")?.value);
+    return Number.isFinite(raw) && raw > 0 ? raw : 1;
+}
+
+function buildEpochLabels(totalEpochs) {
+    return Array.from({ length: totalEpochs }, (_, i) => i + 1);
+}
+
+function padSeries(values, totalEpochs) {
+    const arr = Array.isArray(values) ? values.slice() : [];
+    while (arr.length < totalEpochs) {
+        arr.push(null);
+    }
+    return arr.slice(0, totalEpochs);
+}
 
 function getCsrfToken() {
     return document.querySelector("[name=csrfmiddlewaretoken]").value;
@@ -307,7 +325,9 @@ function createEmptyChart() {
                         text: "Epoch"
                     },
                     ticks: {
-                        color: "#dfe7ff"
+                        color: "#dfe7ff",
+                        autoSkip: true,
+                        maxTicksLimit: 12
                     },
                     grid: {
                         color: "rgba(255,255,255,0.08)"
@@ -346,21 +366,25 @@ window.addEventListener('resize', () => {
     }
 });
 
-function resetChart() {
-    trainingChart.data.labels = [];
-    trainingChart.data.datasets[0].data = [];
-    trainingChart.data.datasets[1].data = [];
-    trainingChart.data.datasets[2].data = [];
-    trainingChart.data.datasets[3].data = [];
+function resetChart(totalEpochs = 0) {
+    fixedEpochLimit = totalEpochs > 0 ? totalEpochs : getEpochLimitFromForm();
+
+    trainingChart.data.labels = buildEpochLabels(fixedEpochLimit);
+    trainingChart.data.datasets[0].data = Array(fixedEpochLimit).fill(null);
+    trainingChart.data.datasets[1].data = Array(fixedEpochLimit).fill(null);
+    trainingChart.data.datasets[2].data = Array(fixedEpochLimit).fill(null);
+    trainingChart.data.datasets[3].data = Array(fixedEpochLimit).fill(null);
     trainingChart.update();
 }
 
-function updateChart(history) {
-    trainingChart.data.labels = history.epoch || [];
-    trainingChart.data.datasets[0].data = history.train_loss || [];
-    trainingChart.data.datasets[1].data = history.test_loss || [];
-    trainingChart.data.datasets[2].data = history.train_acc || [];
-    trainingChart.data.datasets[3].data = history.test_acc || [];
+function updateChart(history, totalEpochs = fixedEpochLimit) {
+    const epochLimit = totalEpochs > 0 ? totalEpochs : getEpochLimitFromForm();
+
+    trainingChart.data.labels = buildEpochLabels(epochLimit);
+    trainingChart.data.datasets[0].data = padSeries(history.train_loss, epochLimit);
+    trainingChart.data.datasets[1].data = padSeries(history.test_loss, epochLimit);
+    trainingChart.data.datasets[2].data = padSeries(history.train_acc, epochLimit);
+    trainingChart.data.datasets[3].data = padSeries(history.test_acc, epochLimit);
     trainingChart.update();
 }
 
@@ -385,7 +409,14 @@ function updateMetricBox(latest) {
 
 async function startTraining() {
     try {
-        resetChart();
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+
+        const requestedEpochs = getEpochLimitFromForm();
+        resetChart(requestedEpochs);
+
         trainingStatus.textContent = "当前状态：正在创建训练任务...";
         metricBox.textContent = "正在启动训练。";
 
@@ -406,17 +437,15 @@ async function startTraining() {
         }
 
         currentJobId = data.job_id;
+        fixedEpochLimit = Number(data.total_epochs) || requestedEpochs;
+        resetChart(fixedEpochLimit);
+
         trainingStatus.textContent = "当前状态：训练中...";
         metricBox.textContent = "训练任务已启动。";
 
-        // 新增：自动滚动到图表区域
         const chartPanel = document.getElementById("chart-panel");
         if (chartPanel) {
             chartPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-
-        if (pollTimer) {
-            clearInterval(pollTimer);
         }
 
         pollTimer = setInterval(async () => {
@@ -430,7 +459,7 @@ async function startTraining() {
             }
 
             const job = statusData.job;
-            updateChart(job.history);
+            updateChart(job.history, job.total_epochs || fixedEpochLimit);
             updateMetricBox(job.latest);
 
             trainingStatus.textContent = `当前状态：${job.message}（${job.current_epoch}/${job.total_epochs}，设备：${job.device || "unknown"}）`;
