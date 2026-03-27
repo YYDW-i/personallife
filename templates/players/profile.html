@@ -2,144 +2,168 @@
 {% block title %}个人资料 - LocalLife{% endblock %}
 
 {% block content %}
-<section class="profile-shell">
-  <div class="profile-top glass card">
-    <div class="profile-hero">
-      <div class="profile-avatar-wrap">
-        {% if profile.avatar %}
-          <img src="{{ profile.avatar.url }}" alt="头像" class="profile-avatar">
-        {% else %}
-          <div class="profile-avatar profile-avatar-fallback">
-            {{ user.username|first|upper }}
-          </div>
-        {% endif %}
+<section class="player-profile-page">
+
+  <div class="player-hero glass card">
+    <div class="player-hero-left">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="头像" class="player-avatar">
+      {% else %}
+        <div class="player-avatar player-avatar-fallback">
+          {{ user.username|first|upper }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="player-hero-right">
+      <div class="player-hero-top">
+        <div>
+          <div class="player-kicker">PERSONAL SPACE</div>
+          <h1 class="player-title">个人资料</h1>
+        </div>
+        <a href="{% url 'players:password_change' %}" class="player-btn player-btn-ghost">修改密码</a>
       </div>
 
-      <div class="profile-summary">
-        <div class="profile-summary-top">
-          <div>
-            <div class="profile-eyebrow">PERSONAL SPACE</div>
-            <h1 class="profile-title">个人资料</h1>
-          </div>
-          <a href="{% url 'players:password_change' %}" class="btn-soft">修改密码</a>
+      <p class="player-signature">
+        {{ profile.signature|default:"这个人很低调，暂时没有留下个性签名。" }}
+      </p>
+
+      <div class="player-meta-list">
+        <div class="player-meta-item">
+          <span class="meta-name">账号</span>
+          <span class="meta-value">{{ user.username }}</span>
         </div>
-
-        <p class="profile-signature">
-          {{ profile.signature|default:"这个人很低调，暂时没有留下个性签名。" }}
-        </p>
-
-        <div class="profile-meta-grid">
-          <div class="meta-chip">
-            <span class="meta-label">账号</span>
-            <span class="meta-value">{{ user.username }}</span>
-          </div>
-          <div class="meta-chip">
-            <span class="meta-label">邮箱</span>
-            <span class="meta-value">{{ user.email|default:"未填写" }}</span>
-          </div>
-          <div class="meta-chip">
-            <span class="meta-label">注册时间</span>
-            <span class="meta-value">{{ user.date_joined|date:"Y-m-d H:i" }}</span>
-          </div>
-          <div class="meta-chip">
-            <span class="meta-label">上次登录</span>
-            <span class="meta-value">{{ user.last_login|date:"Y-m-d H:i" }}</span>
-          </div>
+        <div class="player-meta-item">
+          <span class="meta-name">邮箱</span>
+          <span class="meta-value">{{ user.email|default:"未填写" }}</span>
+        </div>
+        <div class="player-meta-item">
+          <span class="meta-name">注册时间</span>
+          <span class="meta-value">{{ user.date_joined|date:"Y-m-d H:i" }}</span>
+        </div>
+        <div class="player-meta-item">
+          <span class="meta-name">上次登录</span>
+          <span class="meta-value">{{ user.last_login|date:"Y-m-d H:i" }}</span>
         </div>
       </div>
     </div>
   </div>
 
   {% if messages %}
-    <div class="msg-list">
+    <div class="player-msg-list">
       {% for message in messages %}
-        <div class="msg-item">{{ message }}</div>
+        <div class="player-msg-item">{{ message }}</div>
       {% endfor %}
     </div>
   {% endif %}
 
-  <div class="profile-main">
-    <div class="glass card profile-form-card">
-      <div class="card-head">
-        <div>
-          <h2>编辑资料</h2>
-          <p>补充你的公开信息与个性展示内容。</p>
-        </div>
+  <div class="player-main-layout">
+    <div class="player-editor glass card">
+
+      <div class="section-head">
+        <h2>编辑资料</h2>
+        <p>把资料整理清楚以后，这个页面会比现在高级很多。</p>
       </div>
 
-      <form method="post" enctype="multipart/form-data" class="profile-form">
+      <form method="post" enctype="multipart/form-data" class="player-form">
         {% csrf_token %}
 
-        <div class="field-grid">
-          <div class="field">
-            <label for="{{ user_form.username.id_for_label }}">账号</label>
-            {{ user_form.username }}
-          </div>
-
-          <div class="field">
-            <label for="{{ user_form.email.id_for_label }}">邮箱</label>
-            {{ user_form.email }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.nickname.id_for_label }}">昵称</label>
-            {{ profile_form.nickname }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.phone.id_for_label }}">手机号</label>
-            {{ profile_form.phone }}
-          </div>
-
-          <div class="field field-span-2">
-            <label for="{{ profile_form.signature.id_for_label }}">个性签名</label>
-            {{ profile_form.signature }}
-          </div>
-
-          <div class="field field-span-2">
-            <label for="{{ profile_form.bio.id_for_label }}">个人简介</label>
-            {{ profile_form.bio }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.location.id_for_label }}">所在地</label>
-            {{ profile_form.location }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.website.id_for_label }}">个人网站</label>
-            {{ profile_form.website }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.birthday.id_for_label }}">生日</label>
-            {{ profile_form.birthday }}
-          </div>
-
-          <div class="field">
-            <label for="{{ profile_form.avatar.id_for_label }}">头像</label>
-            {{ profile_form.avatar }}
+        <div class="profile-section">
+          <div class="profile-section-title">基础信息</div>
+          <div class="player-grid cols-2">
+            <div class="field-item">
+              <label for="{{ user_form.username.id_for_label }}">账号</label>
+              {{ user_form.username }}
+            </div>
+            <div class="field-item">
+              <label for="{{ user_form.email.id_for_label }}">邮箱</label>
+              {{ user_form.email }}
+            </div>
+            <div class="field-item">
+              <label for="{{ profile_form.nickname.id_for_label }}">昵称</label>
+              {{ profile_form.nickname }}
+            </div>
+            <div class="field-item">
+              <label for="{{ profile_form.phone.id_for_label }}">手机号</label>
+              {{ profile_form.phone }}
+            </div>
           </div>
         </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary-solid">保存资料</button>
+        <div class="profile-section">
+          <div class="profile-section-title">展示信息</div>
+          <div class="player-grid cols-2">
+            <div class="field-item span-2">
+              <label for="{{ profile_form.signature.id_for_label }}">个性签名</label>
+              {{ profile_form.signature }}
+            </div>
+            <div class="field-item span-2">
+              <label for="{{ profile_form.bio.id_for_label }}">个人简介</label>
+              {{ profile_form.bio }}
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">联系与展示链接</div>
+          <div class="player-grid cols-2">
+            <div class="field-item">
+              <label for="{{ profile_form.location.id_for_label }}">所在地</label>
+              {{ profile_form.location }}
+            </div>
+            <div class="field-item">
+              <label for="{{ profile_form.website.id_for_label }}">个人网站</label>
+              {{ profile_form.website }}
+            </div>
+            <div class="field-item">
+              <label for="{{ profile_form.birthday.id_for_label }}">生日</label>
+              {{ profile_form.birthday }}
+            </div>
+            <div class="field-item">
+              <label>头像</label>
+              <div class="custom-upload">
+                {{ profile_form.avatar }}
+                <label for="{{ profile_form.avatar.id_for_label }}" class="upload-trigger">选择头像</label>
+                <span class="upload-filename" id="upload-filename">未选择文件</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="player-form-actions">
+          <button type="submit" class="player-btn player-btn-primary">保存资料</button>
         </div>
       </form>
     </div>
 
-    <aside class="profile-side">
-      <div class="glass card side-card">
+    <aside class="player-sidebar">
+      <div class="glass card sidebar-card">
         <h3>账号安全</h3>
-        <p>系统不会显示你的原密码。修改密码后，建议重新登录一次，确认新密码可正常使用。</p>
-        <a href="{% url 'players:password_change' %}" class="btn-soft full">前往修改密码</a>
+        <p>原密码不会显示。修改密码后，建议退出并重新登录一次，确认新密码可正常使用。</p>
+        <a href="{% url 'players:password_change' %}" class="player-btn player-btn-ghost full-width">前往修改密码</a>
       </div>
 
-      <div class="glass card side-card">
-        <h3>展示建议</h3>
-        <p>昵称可以更生活化一点，个性签名控制在一两句话，简介尽量写清楚你想让别人认识你的哪一面。</p>
+      <div class="glass card sidebar-card">
+        <h3>填写建议</h3>
+        <p>昵称尽量简洁，个性签名控制在一句话，简介用两到三句说明你是谁、你在做什么、你希望别人怎样认识你。</p>
       </div>
     </aside>
   </div>
 </section>
+
+<script>
+  (function () {
+    const fileInput = document.getElementById("{{ profile_form.avatar.id_for_label }}");
+    const fileName = document.getElementById("upload-filename");
+    if (fileInput && fileName) {
+      fileInput.addEventListener("change", function () {
+        if (this.files && this.files.length > 0) {
+          fileName.textContent = this.files[0].name;
+        } else {
+          fileName.textContent = "未选择文件";
+        }
+      });
+    }
+  })();
+</script>
 {% endblock %}

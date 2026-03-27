@@ -13,8 +13,16 @@ class UserBasicForm(forms.ModelForm):
             "email": "邮箱",
         }
         widgets = {
-            "username": forms.TextInput(attrs={"class": "input"}),
-            "email": forms.EmailInput(attrs={"class": "input"}),
+            "username": forms.TextInput(attrs={
+                "class": "profile-control",
+                "placeholder": "输入账号名称",
+                "autocomplete": "username",
+            }),
+            "email": forms.EmailInput(attrs={
+                "class": "profile-control",
+                "placeholder": "name@example.com",
+                "autocomplete": "email",
+            }),
         }
 
 class UserProfileForm(forms.ModelForm):
@@ -32,11 +40,41 @@ class UserProfileForm(forms.ModelForm):
             "avatar": "头像",
         }
         widgets = {
-            "nickname": forms.TextInput(attrs={"class": "input"}),
-            "signature": forms.TextInput(attrs={"class": "input"}),
-            "bio": forms.Textarea(attrs={"class": "input", "rows": 4}),
-            "phone": forms.TextInput(attrs={"class": "input"}),
-            "location": forms.TextInput(attrs={"class": "input"}),
-            "website": forms.URLInput(attrs={"class": "input"}),
-            "birthday": forms.DateInput(attrs={"class": "input", "type": "date"}),
+            "nickname": forms.TextInput(attrs={
+                "class": "profile-control",
+                "placeholder": "你希望别人怎么称呼你",
+            }),
+            "signature": forms.TextInput(attrs={
+                "class": "profile-control",
+                "placeholder": "一句简短的个性签名",
+                "maxlength": "120",
+            }),
+            "bio": forms.Textarea(attrs={
+                "class": "profile-control profile-control-textarea",
+                "rows": 5,
+                "placeholder": "介绍一下你自己，写你希望别人认识你的哪一面",
+            }),
+            "phone": forms.TextInput(attrs={
+                "class": "profile-control",
+                "placeholder": "选填",
+                "autocomplete": "tel",
+            }),
+            "location": forms.TextInput(attrs={
+                "class": "profile-control",
+                "placeholder": "例如：Wuhan / Frankfurt",
+                "autocomplete": "address-level2",
+            }),
+            "website": forms.URLInput(attrs={
+                "class": "profile-control",
+                "placeholder": "https://your-site.com",
+                "autocomplete": "url",
+            }),
+            "birthday": forms.DateInput(attrs={
+                "class": "profile-control",
+                "type": "date",
+            }),
+            "avatar": forms.ClearableFileInput(attrs={
+                "class": "profile-file-input",
+                "accept": "image/*",
+            }),
         }
