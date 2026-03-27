@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "analytics_app",
     "profiles",
     "deeplearning",
+    "players",
 ]
 
 MIDDLEWARE = [
@@ -152,3 +153,6 @@ NEWS_SUMMARY_BACKEND = "fallback"
 # 当 NEWS_SUMMARY_BACKEND="callable" 时，用这个指向你项目里的函数
 # 例如你已有 profiles.zhipu_client，可写成 "profiles.zhipu_client.get_news_brief"
 NEWS_SUMMARY_CALLABLE = "profiles.zhipu_client.get_news_brief"
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

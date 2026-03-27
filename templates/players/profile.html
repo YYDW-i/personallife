@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}个人资料 - LocalLife{% endblock %}
+
+{% block content %}
+<section class="glass card profile-page">
+  <div class="profile-header">
+    <div class="avatar-box">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="头像" class="avatar-img">
+      {% else %}
+        <div class="avatar-fallback">{{ user.username|first|upper }}</div>
+      {% endif %}
+    </div>
+
+    <div class="profile-meta">
+      <h1>个人资料</h1>
+      <p class="profile-signature">
+        {{ profile.signature|default:"这个人很低调，暂时没有留下个性签名。" }}
+      </p>
+      <p>账号：{{ user.username }}</p>
+      <p>注册时间：{{ user.date_joined|date:"Y-m-d H:i" }}</p>
+      <p>上次登录：{{ user.last_login|date:"Y-m-d H:i" }}</p>
+    </div>
+  </div>
+
+  {% if messages %}
+    <div class="msg-list">
+      {% for message in messages %}
+        <div class="msg-item">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="profile-grid">
+    <div class="glass card">
+      <h2>编辑资料</h2>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-row">
+          <label>{{ user_form.username.label }}</label>
+          {{ user_form.username }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ user_form.email.label }}</label>
+          {{ user_form.email }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.nickname.label }}</label>
+          {{ profile_form.nickname }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.signature.label }}</label>
+          {{ profile_form.signature }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.bio.label }}</label>
+          {{ profile_form.bio }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.phone.label }}</label>
+          {{ profile_form.phone }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.location.label }}</label>
+          {{ profile_form.location }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.website.label }}</label>
+          {{ profile_form.website }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.birthday.label }}</label>
+          {{ profile_form.birthday }}
+        </div>
+
+        <div class="form-row">
+          <label>{{ profile_form.avatar.label }}</label>
+          {{ profile_form.avatar }}
+        </div>
+
+        <button type="submit" class="btn-primary">保存资料</button>
+      </form>
+    </div>
+
+    <div class="glass card">
+      <h2>账号安全</h2>
+      <p>出于安全原因，系统不会显示你的原密码。</p>
+      <p>你可以点击下面按钮进入修改密码页面。</p>
+      <a href="{% url 'players:password_change' %}" class="btn-primary">修改密码</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

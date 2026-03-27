@@ -27,6 +27,7 @@
         {% url 'analytics_app:iching_index' as analytics_app_url %}
         {% url 'deeplearning:builder' as deeplearning_url %}
         {% url 'profiles:settings' as set_url %}
+        {% url 'players:profile' as profile_url %}
         <div class="tabs-left">
           <a class="tab {% if request.path == dash_url %}active{% endif %}" href="{{ dash_url }}">Dashboard</a>
           <a class="tab {% if request.path|slice:":7" == "/tasks/" %}active{% endif %}" href="{{ tasks_url }}">Tasks</a>
@@ -39,7 +40,10 @@
         </div>
 
         <div class="tabs-right">
-        <span class="tab subtle">你好，{{ user.username }}</span>
+        <a class="tab subtle {% if request.path|slice:':17' == '/players/profile/' %}active{% endif %}"
+          href="{{ profile_url }}">
+          你好，{{ user.username }}
+        </a>
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
           {% csrf_token %}
           <button type="submit" class="tab subtle" style="background:transparent;border:0;cursor:pointer;">
