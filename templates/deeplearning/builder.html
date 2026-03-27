@@ -112,9 +112,14 @@
 
     <div class="dl-bottom-stack">
         <div class="dl-bottom-panel">
-            <div class="panel-header small">
-                <h3>自动生成的 PyTorch 代码</h3>
-                <p>修改配置后，这里会自动刷新。</p>
+            <div class="panel-header small code-panel-header">
+                <div>
+                    <h3>自动生成的 PyTorch 代码</h3>
+                    <p>修改配置后，这里会自动刷新。</p>
+                </div>
+                <div class="code-toolbar">
+                    <button type="button" class="dl-btn code-copy-btn" id="copy-code-btn">复制代码</button>
+                </div>
             </div>
             <div class="code-box">
                 <pre><code id="code-output">{{ generated_code }}</code></pre>
@@ -144,6 +149,7 @@ const form = document.getElementById("dl-builder-form");
 const codeOutput = document.getElementById("code-output");
 const generateCodeBtn = document.getElementById("generate-code-btn");
 const startTrainingBtn = document.getElementById("start-training-btn");
+const copyCodeBtn = document.getElementById("copy-code-btn");
 const trainingStatus = document.getElementById("training-status");
 const metricBox = document.getElementById("metric-box");
 
@@ -267,6 +273,45 @@ async function generateCode() {
 function scheduleGenerateCode() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(generateCode, 450);
+}
+
+async function copyGeneratedCode() {
+    const text = codeOutput.textContent || "";
+
+    if (!text.trim()) {
+        copyCodeBtn.textContent = "暂无代码";
+        setTimeout(() => {
+            copyCodeBtn.textContent = "复制代码";
+        }, 1200);
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+        }
+
+        copyCodeBtn.textContent = "已复制";
+        setTimeout(() => {
+            copyCodeBtn.textContent = "复制代码";
+        }, 1200);
+    } catch (error) {
+        copyCodeBtn.textContent = "复制失败";
+        setTimeout(() => {
+            copyCodeBtn.textContent = "复制代码";
+        }, 1200);
+        console.error(error);
+    }
 }
 
 function createEmptyChart() {
@@ -484,6 +529,7 @@ async function startTraining() {
 
 generateCodeBtn.addEventListener("click", generateCode);
 startTrainingBtn.addEventListener("click", startTraining);
+copyCodeBtn.addEventListener("click", copyGeneratedCode);
 
 form.addEventListener("input", () => {
     toggleFieldVisibility();
@@ -658,18 +704,34 @@ toggleFieldVisibility();
 }
 
 .dl-bottom-stack .dl-bottom-panel:first-child {
-    /* 代码面板高度可以稍微增加，但保持自适应 */
-    min-height: 480px;   /* 根据实际效果可调，让代码区域有足够空间 */
+    min-height: auto;
 }
 
-.dl-bottom-stack .dl-bottom-panel:last-child {
-    /* 曲线图面板高度适当缩小，但保持图表可见 */
-    min-height: 420px;   /* 可根据需要调整 */
+.code-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.code-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.code-copy-btn {
+    padding: 8px 16px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 .code-box {
-    height: calc(100% - 70px);
-    overflow: auto;
+    height: 320px;
+    overflow-y: auto;
+    overflow-x: auto;
     border-radius: 18px;
     background: rgba(6, 11, 28, 0.92);
     border: 1px solid rgba(255,255,255,0.06);
@@ -679,6 +741,7 @@ toggleFieldVisibility();
 
 .code-box pre {
     margin: 0;
+    min-width: max-content;
     white-space: pre;
     font-size: 13px;
     line-height: 1.55;
@@ -736,7 +799,7 @@ toggleFieldVisibility();
     }
 
     .code-box {
-        height: 420px;
+        height: 260px;
     }
 
     .chart-wrap {
