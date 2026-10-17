@@ -1,0 +1,25 @@
+.iching-intro {display:flex;justify-content:space-between;gap:24px;align-items:center}
+.iching-mark {font-size:76px;color:var(--accent,#82dfb0);line-height:1}
+.iching-form {display:grid;gap:14px;margin-top:24px}
+.iching-form label {display:grid;gap:8px}
+.iching-form .iching-checkbox {display:flex;align-items:flex-start;gap:10px;line-height:1.6}
+.iching-pair,.iching-ai-grid {display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.iching-panel {background:rgba(255,255,255,.025);border:1px solid var(--border, #303a35);padding:20px;border-radius:14px;margin-bottom:12px;min-width:0}
+.iching-panel h3 {margin:0 0 14px;font-size:15px}
+.iching-panel pre {font-size:16px;line-height:1.8;white-space:pre;overflow:auto;color:#abdcbf}
+.iching-prose {line-height:1.95;color:var(--text,#e4ebe7);overflow-wrap:anywhere}
+ol.iching-prose {padding-left:24px}
+.iching-prose li {padding:0 0 10px 4px}
+.iching-chip {display:inline-flex;border-radius:6px;background:#233b2e;color:#a5e7bf;padding:3px 8px;font-size:12px}
+.iching-coins {display:flex;gap:7px;margin:12px 0}
+.iching-coin {display:grid;place-items:center;width:32px;height:32px;border:1px solid #aa8950;border-radius:50%;background:#332b20;color:#ead09c;animation:iching-flip .7s ease-out}
+.iching-line-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.iching-error {color:#ffc5b9;line-height:1.8}
+.iching-busy {display:flex;gap:10px;align-items:center;padding:16px 0;color:#abdfbf}
+.iching-busy::before {content:"";width:15px;height:15px;border:2px solid #415f4d;border-top-color:#a4e5be;border-radius:50%;animation:iching-spin .8s linear infinite}
+#ai-section-placeholder {scroll-margin-top:20px}
+@keyframes iching-spin {to {transform:rotate(360deg)}}
+@keyframes iching-flip {from {transform:rotateY(360deg)}to {transform:rotateY(0)}}
+@media(max-width:1000px){.iching-line-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.iching-pair,.iching-ai-grid,.iching-line-grid{grid-template-columns:1fr}.iching-mark{font-size:50px}.iching-panel{padding:15px}}
+@media(prefers-reduced-motion:reduce){.iching-coin,.iching-busy::before{animation:none}}

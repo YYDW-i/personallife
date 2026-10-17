@@ -8,7 +8,39 @@ from .iching_data import ensure_dataset_ready, get_hex_by_array
 from .zhipu_client import zhipu_interpret_optional
 
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.core import signing
+from django.template.loader import render_to_string
+
+
+def _ai_context(request, question, primary, moving_lines):
+    return signing.dumps({"user": request.user.pk, "question": question,
+                          "array": primary["array"], "moving_lines": moving_lines},
+                         salt="iching-ai", compress=True)
+
+
+def _ai_html(request, ai, token):
+    return render_to_string("analytics_app/iching/_ai_result.html",
+                            {"ai": ai, "ai_token": token, "can_retry": True}, request=request)
+
+
+@login_required
+@require_http_methods(["POST"])
+def iching_interpret(request):
+    try:
+        token = request.POST.get("token", "")
+        if len(token) > 16000:
+            raise signing.BadSignature
+        context = signing.loads(token, salt="iching-ai", max_age=3600)
+        if context["user"] != request.user.pk:
+            raise signing.BadSignature
+    except (signing.BadSignature, KeyError, TypeError):
+        return JsonResponse({"error": "卦象凭证已过期或无效，请重新起卦。"}, status=400)
+    primary = get_hex_by_array(context["array"])
+    moving = context["moving_lines"]
+    relating_array = [1 - bit if i in moving else bit for i, bit in enumerate(primary["array"], 1)]
+    relating = get_hex_by_array(relating_array) if moving else None
+    ai = zhipu_interpret_optional(context["question"], primary, relating, moving)
+    return JsonResponse({"ai": ai, "html": _ai_html(request, ai, token)})
 
 @login_required
 @require_http_methods(["GET"])
@@ -25,6 +57,8 @@ def iching_index(request):
 @require_http_methods(["POST"])
 def iching_cast(request):
     question = (request.POST.get("question") or "").strip()
+    if len(question) > 1000:
+        return JsonResponse({"error": "问题请控制在 1000 字以内。"}, status=400)
     method = request.POST.get("method") or "coins"
     if method not in ("coins", "random", "time"):
         return JsonResponse({"error": "不支持的起卦方式"}, status=400)
@@ -60,10 +94,6 @@ def iching_cast(request):
             relating=relating,
             moving_lines=r.moving_lines
         )
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.debug(f"AI 返回内容: {ai}")
-        # 也可以直接打印到控制台（开发服务器会显示）
     ctx = {
         "question": question,
         "method": method,
@@ -75,6 +105,7 @@ def iching_cast(request):
         "relating_lines": relating_lines,
         "ai": ai,
         "coin_results": r.coin_results,
+        "ai_token": _ai_context(request, question, primary, r.moving_lines),
     }
     return render(request, "analytics_app/iching/result.html", ctx)
 
@@ -82,6 +113,8 @@ def iching_cast(request):
 @require_http_methods(["POST"])
 def iching_cast_ajax(request):
     question = (request.POST.get("question") or "").strip()
+    if len(question) > 1000:
+        return JsonResponse({"error": "问题请控制在 1000 字以内。"}, status=400)
     method = request.POST.get("method") or "coins"
     if method not in ("coins", "random", "time"):
         return JsonResponse({"error": "不支持的起卦方式"}, status=400)
@@ -107,6 +140,7 @@ def iching_cast_ajax(request):
             moving_lines=r.moving_lines
         )
 
+    token = _ai_context(request, question, primary, r.moving_lines)
     data = {
         "question": question,
         "method": method,
@@ -118,6 +152,8 @@ def iching_cast_ajax(request):
         "relating_lines": relating_lines,
         "ai": ai,
         "coin_results": r.coin_results,
+        "ai_token": token,
+        "ai_html": _ai_html(request, ai, token) if ai else "",
     }
     
     return JsonResponse(data)

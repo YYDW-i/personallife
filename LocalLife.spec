@@ -1,8 +1,13 @@
 # 用 PyInstaller 构建包含 Python、Django、CPU 训练运行时的目录发行包。
 from pathlib import Path
+import os
+import re
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 root = Path(SPECPATH)
+release_name = os.environ.get('LOCALLIFE_RELEASE_NAME', 'LocalLife')
+if not re.fullmatch(r'LocalLife(?:-[A-Za-z0-9_.-]+)?', release_name):
+    raise ValueError('Invalid release directory name')
 apps = ['config', 'accounts', 'core', 'tasks', 'planner', 'maths', 'news',
         'analytics_app', 'profiles', 'players', 'deeplearning']
 hidden = []
@@ -33,4 +38,4 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='LocalLife',
           debug=False, strip=False, upx=False, console=True, version='packaging/version_info.txt',
           icon='packaging/locallife.ico')
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='LocalLife')
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name=release_name)

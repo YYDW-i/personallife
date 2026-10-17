@@ -2,6 +2,7 @@
 import argparse
 from http.cookiejar import CookieJar
 import json
+import os
 from pathlib import Path
 import re
 import socket
@@ -49,6 +50,11 @@ def verify_user_flow(url):
     html = post("settings/", {"height_cm": "175", "weight_kg": "65", "age_year": "25", "gender": "M",
                                "exercise_frequency": "3", "exercise_time_minutes": "30", "sleep_hours": "7.5"})
     assert "21.2" in html
+    get("analytics/iching/")
+    cast = json.loads(post("analytics/iching/cast-ajax/", {"question": "验收用的学习计划", "method": "coins"}))
+    assert len(cast["primary_lines"]) == 6 and cast["ai"] is None
+    ai = json.loads(post("analytics/iching/interpret/", {"token": cast["ai_token"]}))
+    assert "OPENAI_API_KEY" in ai["ai"]["error"] and "重试当前卦象" in ai["html"]
     post("accounts/logout/", {})
 
 
@@ -69,7 +75,8 @@ def main():
         if args.source:
             command.append(str(root / "desktop_launcher.py"))
         command += ["--data-dir", str(data_dir), "--port", str(requested_port), "--no-browser"]
-        process = subprocess.Popen(command, cwd=data_dir, stdout=log, stderr=log)
+        test_env = {**os.environ, "OPENAI_API_KEY": ""}
+        process = subprocess.Popen(command, cwd=data_dir, stdout=log, stderr=log, env=test_env)
         try:
             instance_path = data_dir / ".desktop-instance.json"
             deadline = time.monotonic() + 90
@@ -81,6 +88,8 @@ def main():
             assert f":{requested_port}/" not in url, "没有避让已占用端口"
             for path, expected in (("", "text/html"), ("static/css/workspace.css", "text/css"),
                                    ("static/js/reminders.js", "javascript"),
+                                   ("static/js/iching.js", "javascript"),
+                                   ("static/css/iching.css", "text/css"),
                                    ("static/vendor/chart.umd.min.js", "javascript"),
                                    ("static/images/logo.svg", "svg")):
                 with urllib.request.urlopen(url + path, timeout=15) as response:
@@ -88,10 +97,10 @@ def main():
                     assert expected in response.headers.get("Content-Type", ""), path
                     assert response.read(), path
             verify_user_flow(url)
-            duplicate = subprocess.run(command, cwd=data_dir, capture_output=True, timeout=45)
+            duplicate = subprocess.run(command, cwd=data_dir, capture_output=True, timeout=45, env=test_env)
             assert duplicate.returncode == 0, duplicate.stderr.decode("utf-8", errors="replace")
             assert "已在运行" in duplicate.stdout.decode("utf-8", errors="replace")
-            print(f"DESKTOP_HTTP_OK: assets, registration, login, task create/complete, math, health, logout, occupied port fallback, single instance; {data_dir}")
+            print(f"DESKTOP_HTTP_OK: assets, registration, login, task create/complete, math, health, I Ching cast + AI missing-key/retry UI, logout, occupied port fallback, single instance; {data_dir}")
         finally:
             process.terminate()
             process.wait(timeout=15)
