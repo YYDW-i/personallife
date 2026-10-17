@@ -59,4 +59,6 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
         self.remind_at = self.compute_remind_at()
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"remind_at"}
         super().save(*args, **kwargs)

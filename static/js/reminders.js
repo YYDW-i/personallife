@@ -18,7 +18,6 @@
   }
   const audio = new Audio("/static/sounds/remind.mp3");
   audio.preload = "auto";
-  let  = false;
   const SOUND_KEY = "locallife_sound_enabled";
   let soundEnabled = localStorage.getItem(SOUND_KEY) !== "0"; // 默认开启（你也可以默认关闭）
   let audioUnlocked = false;
@@ -156,7 +155,7 @@
           audio.currentTime = 0;
           playSound();
         } else if (soundEnabled && !audioUnlocked) {
-          toast("🔇 声音未解锁：点一下“测试声音/开启声音提醒”");
+          toast(btnSoundTest ? "🔇 声音未解锁：点一下“测试声音/开启声音提醒”" : "🔇 可在任务清单中开启声音提醒");
         }
       });
 

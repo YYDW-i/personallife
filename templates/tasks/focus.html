@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>专注模式 · {{ task.title }}</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <style>
         body {
             margin: 0;
@@ -84,6 +84,12 @@
             <div class="countdown-label">剩余专注时间</div>
         </div>
 
+        <form method="post" action="{% url 'tasks:complete' task.pk %}">
+            {% csrf_token %}<button class="btn success" type="submit">提前完成本次专注 ✓</button>
+        </form>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}<button class="btn" type="submit">退出登录</button>
+        </form>
         <div class="hint">
             <i>专注期间无法使用其他功能，结束后自动返回</i>
         </div>
@@ -116,6 +122,7 @@
             setInterval(updateTimer, 1000);
         })();
     </script>
+    <div id="toast-root"></div>
     <script>
         window.REMINDER_ENDPOINT = "{% url 'tasks:reminders_api' %}";
     </script>

@@ -1,10 +1,10 @@
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import DATASET_CHOICES, DEFAULT_FORM_DATA, DeepLearningBuilderForm
 from .utils.code_generator import generate_pytorch_code
-from .utils.trainer import get_training_job, start_training_job
 
 DATASET_TASK_MAP = {
     "normal_regression": "regression",
@@ -35,6 +35,7 @@ def _normalize_config(raw_data: dict) -> dict:
     return config
 
 
+@login_required
 @require_GET
 def builder(request):
     form = DeepLearningBuilderForm(initial=DEFAULT_FORM_DATA)
@@ -48,6 +49,7 @@ def builder(request):
     return render(request, "deeplearning/builder.html", context)
 
 
+@login_required
 @require_POST
 def generate_code_api(request):
     form = DeepLearningBuilderForm(request.POST)
@@ -71,6 +73,7 @@ def generate_code_api(request):
     )
 
 
+@login_required
 @require_POST
 def start_training_api(request):
     form = DeepLearningBuilderForm(request.POST)
@@ -85,7 +88,11 @@ def start_training_api(request):
 
     config = _normalize_config(form.cleaned_data)
 
-    job_id = start_training_job(config)
+    from .utils.trainer import start_training_job
+    try:
+        job_id = start_training_job(config, user_id=request.user.pk)
+    except RuntimeError as exc:
+        return JsonResponse({"ok": False, "message": str(exc)}, status=429)
 
     return JsonResponse(
         {
@@ -97,9 +104,11 @@ def start_training_api(request):
     )
 
 
+@login_required
 @require_GET
 def training_status_api(request, job_id):
-    job = get_training_job(job_id)
+    from .utils.trainer import get_training_job
+    job = get_training_job(job_id, user_id=request.user.pk)
     if not job:
         return JsonResponse(
             {

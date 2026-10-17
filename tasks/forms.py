@@ -15,16 +15,21 @@ class TaskForm(forms.ModelForm):
             "schedule_kind", "due_at", "window_start", "window_end",
             "remind_enabled", "remind_lead_minutes",
         ]
+        labels = {
+            "title": "任务名称", "description": "补充说明", "schedule_kind": "安排方式",
+            "due_at": "计划时间", "window_start": "开始时间", "window_end": "结束时间",
+            "remind_enabled": "开启提醒", "remind_lead_minutes": "提前提醒（分钟）",
+        }
         widgets = {
-            "due_at": forms.TextInput(attrs={
+            "due_at": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local",
                 "class": "datepicker",
                 "placeholder": "年-月-日 时:分"
             }),
-            "window_start": forms.TextInput(attrs={
+            "window_start": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local",
                 "class": "datepicker",
                 "placeholder": "年-月-日 时:分"
             }),
-            "window_end": forms.TextInput(attrs={
+            "window_end": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local",
                 "class": "datepicker",
                 "placeholder": "年-月-日 时:分"
             }),
@@ -96,7 +101,7 @@ class TaskForm(forms.ModelForm):
             cleaned['due_at'] = None
 
         # 提醒校验
-        base_time = due_at if kind == Task.ScheduleKind.AT else ws
+        base_time = due_at if kind == Task.ScheduleKind.AT else ws if kind == Task.ScheduleKind.WINDOW else None
         if remind_enabled:
             if not base_time:
                 self.add_error("remind_enabled", "开启提醒前，请先设置任务时间。")

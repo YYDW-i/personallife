@@ -1,73 +1,70 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from profiles.models import HealthProfile
-from profiles.zhipu_client import get_health_analysis
 import hashlib
+import logging
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
-def make_signature(profile: HealthProfile) -> str:
-    raw = f"{profile.height_cm}|{profile.weight_kg}|{profile.age_year}|{profile.gender}|{profile.exercise_frequency}|{profile.exercise_time_minutes}|{profile.sleep_hours}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+from profiles.models import HealthProfile
+from profiles.zhipu_client import get_health_analysis
+from tasks.models import Task
+
+
+def make_signature(profile):
+    values = (profile.height_cm, profile.weight_kg, profile.age_year, profile.gender,
+              profile.exercise_frequency, profile.exercise_time_minutes, profile.sleep_hours)
+    return hashlib.sha256("|".join(map(str, values)).encode()).hexdigest()
+
 
 @login_required
 def dashboard(request):
     profile = HealthProfile.objects.filter(user=request.user).first()
-    has_basic = (profile is not None and profile.height_cm is not None and profile.weight_kg is not None and profile.age_year is not None and profile.exercise_frequency is not None and profile.exercise_time_minutes is not None and profile.sleep_hours is not None)
-    
-    ai_summary = ""
-    ai_status = ""
-    if has_basic:
-    # 组织 prompt，写成一句清晰要求模型分析
-        sig = make_signature(profile)
-
-        # ✅ 命中缓存：数据没变 + 有旧结果
-        if profile.ai_signature == sig and profile.ai_summary:
-            ai_summary = profile.ai_summary
-            ai_status = profile.ai_status or ""
+    has_basic = profile is not None and all(value is not None for value in (
+        profile.height_cm, profile.weight_kg, profile.age_year, profile.exercise_frequency,
+        profile.exercise_time_minutes, profile.sleep_hours)) and bool(profile.gender)
+    if request.method == "POST":
+        if not has_basic:
+            messages.error(request, "请先完善健康资料。")
+        elif not settings.OPENAI_API_KEY:
+            messages.info(request, "请在 .env 中配置 OPENAI_API_KEY 后使用 AI 分析。")
         else:
-            height = profile.height_cm
-            weight = profile.weight_kg
-            age = profile.age_year
-            gender=profile.gender
-            exercise_frequency = profile.exercise_frequency
-            exercise_time_minutes = profile.exercise_time_minutes
-            sleep_hours = profile.sleep_hours
             prompt = (
-                f"用户身高：{height} cm，体重：{weight} kg，年龄：{age} 岁，性别（男：M女：F）：{gender}，运动频率（次/周）：{exercise_frequency}，运动时间（分钟/次）：{exercise_time_minutes}，平均睡眠时间（小时/天）：{sleep_hours}。"
-                "请根据这些数据生成一份针对用户个性化详细的健康分析报告，"
-                "综合用户的这些信息，包括 BMI 指标解释、是否存在超重或偏瘦风险、已经近期作息和运动是否合理健康"
-                "建议的生活习惯改善措施等。"
-                "注意：输出的时候不要用markdown格式，不要使用星号或者其他语法特殊符号，否则输出到html里会出现很多乱码"
-                "最后一行给出一个总结性的健康状态评价，（不要有类似“总结性健康状态评价：”的标题，因为我已经写好标题了）记住，评价内容都要在最后一行"
+                f"身高 {profile.height_cm} cm，体重 {profile.weight_kg} kg，年龄 {profile.age_year}，"
+                f"性别 {profile.get_gender_display()}，每周运动 {profile.exercise_frequency} 次，"
+                f"每次 {profile.exercise_time_minutes} 分钟，睡眠 {profile.sleep_hours} 小时。"
+                "请给出中文生活习惯参考，不作疾病诊断。使用纯文本，最后一行概括建议。"
             )
-
             try:
                 result = get_health_analysis(prompt)
-                # result 里应该包含整个文本，比如：
-                # “BMI 是 XX，属于正常范围。健康建议 …”
-                # 你可以再做一些拆分，但最简单是渲染到模板
-                # 也可以再做一次简单的提取
-                lines = result.split("\n")
-                # 最后一行作为状态总结（如果模型输出结构清晰）
-                if len(lines) > 1:
-                    ai_status = lines[-1]
-                    ai_summary = "\n".join(lines[:-1])
-                else:
-                    ai_summary = result
-                    ai_status = ""
-                profile.ai_summary = ai_summary
-                profile.ai_status = ai_status
-                profile.ai_signature = sig
+                lines = [line.strip() for line in result.splitlines() if line.strip()]
+                profile.ai_summary = "\n".join(lines[:-1]) if len(lines) > 1 else result
+                profile.ai_status = lines[-1][:64] if len(lines) > 1 else "分析已更新"
+                profile.ai_signature = make_signature(profile)
                 profile.ai_updated_at = timezone.now()
-                profile.save(update_fields=["ai_summary","ai_status","ai_signature","ai_updated_at"])
-                profile.refresh_from_db()
-                
-            except Exception as e:
-                ai_summary = f"AI 生成失败，请稍后再试: {str(e)}"
+                profile.save(update_fields=["ai_summary", "ai_status", "ai_signature", "ai_updated_at"])
+                messages.success(request, "健康分析已更新。")
+            except Exception:
+                logging.getLogger(__name__).exception("健康分析失败")
+                messages.error(request, "AI 分析暂时不可用，请检查密钥和网络后重试。")
+        return redirect("core:dashboard")
 
-    return render(request,"core/dashboard.html",
-                {"has_basic": has_basic,
-                "ai_summary": ai_summary,
-                "ai_status": ai_status,
-                "profile": profile}
-    )
+    tasks = Task.objects.filter(user=request.user)
+    total = tasks.count()
+    done = tasks.filter(status=Task.Status.DONE).count()
+    today = timezone.localdate()
+    upcoming = tasks.filter(status=Task.Status.TODO).order_by("due_at", "window_start", "-created_at")[:4]
+    bmi = None
+    if profile and profile.height_cm and profile.height_cm > 0 and profile.weight_kg:
+        bmi = round(float(profile.weight_kg) / (float(profile.height_cm) / 100) ** 2, 1)
+    cached = bool(has_basic and profile.ai_signature == make_signature(profile))
+    return render(request, "core/dashboard.html", {
+        "profile": profile, "has_basic": has_basic, "bmi": bmi,
+        "ai_summary": profile.ai_summary if cached else "",
+        "ai_status": profile.ai_status if cached else "",
+        "ai_enabled": bool(settings.OPENAI_API_KEY),
+        "total_tasks": total, "done_tasks": done, "todo_tasks": total - done,
+        "completion": round(done / total * 100) if total else 0,
+        "upcoming_tasks": upcoming, "today": today,
+    })

@@ -76,7 +76,7 @@
 
     <label class="muted" style="display:flex; align-items:center; gap:10px;">
       <input type="checkbox" name="use_ai" value="1" />
-      使用智谱 AI 生成译文/解读（需配置 ZHIPU_API_KEY）
+      使用智谱 AI 解读（将问题发送至智谱服务，需配置 OPENAI_API_KEY）
     </label>
 
     <button class="btn" type="submit">开始占卜</button>
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 渲染结果（这里先简单显示 JSON）
             renderResult(data);
         } catch (error) {
-            document.getElementById('result-container').innerHTML = `<div class="glass card error">${error.message}</div>`;
+            document.getElementById('result-container').innerHTML = `<div class="glass card error">${escapeHtml(error.message)}</div>`;
         } finally {
             document.getElementById('loading').style.display = 'none';
         }

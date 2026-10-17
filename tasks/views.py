@@ -23,7 +23,7 @@ def active_focus_api(request):
         status=Task.Status.TODO,
         schedule_kind=Task.ScheduleKind.WINDOW,
         window_start__lte=now,
-        window_end__gte=now
+        window_end__gt=now
     ).first()
     if task:
         return JsonResponse({
@@ -38,7 +38,9 @@ def focus_view(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     now = timezone.now()
     # 如果当前不在时间段内（可能手动访问过期URL），则跳回首页
-    if now < task.window_start or now > task.window_end:
+    if (task.status != Task.Status.TODO or task.schedule_kind != Task.ScheduleKind.WINDOW
+            or not task.window_start or not task.window_end
+            or now < task.window_start or now >= task.window_end):
         return redirect('tasks:index')
     return render(request, 'tasks/focus.html', {'task': task})
 
@@ -68,7 +70,7 @@ class TaskListView(LoginRequiredMixin, ListView):
         # 只看自己的任务
         qs = Task.objects.filter(user=self.request.user)
         # 未完成优先，再按提醒/时间排序
-        return qs.order_by("status", "remind_at", "due_at", "window_start", "-created_at")
+        return qs.order_by("-status", "due_at", "window_start", "-created_at")
 
 
 class TaskCreateView(LoginRequiredMixin, CreateView):
@@ -102,7 +104,7 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
                 # parse_datetime 可能返回 naive；统一按当前时区处理
                 if timezone.is_naive(dt):
                     dt = timezone.make_aware(dt, timezone.get_current_timezone())
-                initial["due_at"] = timezone.localtime(dt).strftime("%Y-%m-%d %H:%M")
+                initial["due_at"] = timezone.localtime(dt)
         return initial
 
 
@@ -117,20 +119,23 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         return Task.objects.filter(user=self.request.user)
 
     def form_valid(self, form):
+        old_remind_at = Task.objects.get(pk=self.object.pk).remind_at
         obj = form.save(commit=False)
         # 更新后如果提醒时间变化，也允许再次提醒
         obj.remind_at = compute_remind_at(obj)
+        if old_remind_at != obj.remind_at:
+            obj.reminded_at = None
         obj.save()
         return redirect(self.success_url)
     def get_initial(self):
         initial = super().get_initial()
         task = self.object
         if task.due_at:
-            initial["due_at"] = timezone.localtime(task.due_at).strftime("%Y-%m-%d %H:%M")
+            initial["due_at"] = timezone.localtime(task.due_at)
         if task.window_start:
-            initial["window_start"] = timezone.localtime(task.window_start).strftime("%Y-%m-%d %H:%M")
+            initial["window_start"] = timezone.localtime(task.window_start)
         if task.window_end:
-            initial["window_end"] = timezone.localtime(task.window_end).strftime("%Y-%m-%d %H:%M")
+            initial["window_end"] = timezone.localtime(task.window_end)
         return initial
 
 
@@ -143,6 +148,7 @@ class TaskDeleteView(LoginRequiredMixin, DeleteView):
         return Task.objects.filter(user=self.request.user)
 
 
+@login_required
 @require_POST
 def complete_task(request, pk: int):
     task = get_object_or_404(Task, pk=pk, user=request.user)
@@ -172,6 +178,9 @@ def reminders_api(request):
 
     reminders = []
     for t in qs:
+        claimed = Task.objects.filter(pk=t.pk, reminded_at__isnull=True).update(reminded_at=now)
+        if not claimed:
+            continue
         when = t.remind_at
         reminders.append({
             "id": t.id,
@@ -179,8 +188,5 @@ def reminders_api(request):
             "kind": t.schedule_kind,
             "remind_at": timezone.localtime(when).isoformat() if when else None,
         })
-
-    # 标记已提醒，避免重复弹
-    Task.objects.filter(id__in=[r["id"] for r in reminders]).update(reminded_at=now)
 
     return JsonResponse({"now": timezone.localtime(now).isoformat(), "reminders": reminders})

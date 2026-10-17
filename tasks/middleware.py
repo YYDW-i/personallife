@@ -10,7 +10,7 @@ class FocusModeMiddleware:
 
     def __call__(self, request):
         # 只对已认证用户生效
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and request.method == "GET":
             now = timezone.now()
             # 查找当前处于“时间段”内且未完成的任务（取第一个）
             active_task = Task.objects.filter(
@@ -18,7 +18,7 @@ class FocusModeMiddleware:
                 status=Task.Status.TODO,
                 schedule_kind=Task.ScheduleKind.WINDOW,
                 window_start__lte=now,
-                window_end__gte=now
+                window_end__gt=now
             ).first()
 
             if active_task:
@@ -28,6 +28,8 @@ class FocusModeMiddleware:
                     '/static/',
                     '/tasks/api/',
                     '/admin/',
+                    '/accounts/',
+                    '/media/',
                 ]
                 if not any(request.path.startswith(p) for p in exempt_paths):
                     return redirect('tasks:focus', task_id=active_task.id)

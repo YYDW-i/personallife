@@ -1,3 +1,6 @@
+import textwrap
+from .formula import validate_formula
+
 def _activation_code(name: str) -> str:
     mapping = {
         "relu": "nn.ReLU()",
@@ -81,7 +84,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     y.numpy(),
     test_size={test_size},
     random_state={seed},
-    stratify=y.numpy()
+    stratify=y.numpy() if np.unique(y.numpy(), return_counts=True)[1].min() >= 2 and int(num_samples * {test_size}) >= len(np.unique(y.numpy())) else None
 )
 
 X_train = torch.tensor(X_train, dtype=torch.float32)
@@ -244,13 +247,13 @@ model = nn.Linear(input_dim, output_dim)
 """
 
     if model_name == "custom_formula":
-        formula = (config.get("custom_formula", "") or "x @ w + b").strip()
+        formula = validate_formula(config.get("custom_formula", ""))
         if "=" in formula:
             left, right = formula.split("=", 1)
             if left.strip() == "y":
                 formula = right.strip()
 
-        return f'''
+        return textwrap.dedent(f'''
     # 2. 构造自定义公式模型
     sin = torch.sin
     cos = torch.cos
@@ -272,6 +275,7 @@ model = nn.Linear(input_dim, output_dim)
             self.b = nn.Parameter(torch.zeros(output_dim))
 
         def forward(self, x):
+            w, b = self.w, self.b
             y = {formula}
             if y.ndim == 1:
                 y = y.unsqueeze(1)
@@ -284,7 +288,7 @@ model = nn.Linear(input_dim, output_dim)
             return y
 
     model = CustomFormulaModel(input_dim, output_dim, task_type)
-    '''
+    ''')
 
     hidden_sizes = hidden_sizes or [64, 32]
     hidden_text = ", ".join(str(x) for x in hidden_sizes)
@@ -317,7 +321,8 @@ def generate_pytorch_code(config: dict) -> str:
     if dataset_name in ["mnist", "fashion_mnist"]:
         extra_import = "from torchvision import datasets, transforms\n"
 
-    return f'''import torch
+    return f'''import numpy as np
+import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 import matplotlib.pyplot as plt

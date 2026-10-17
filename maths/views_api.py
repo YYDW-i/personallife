@@ -8,7 +8,10 @@ from .engine import run as run_engine
 @login_required
 @require_POST
 def api_eval(request):
-    payload = json.loads(request.body.decode("utf-8"))
+    try:
+        payload = _payload(request)
+    except ValueError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
     expr = payload.get("expr", "")
     # MVP 先不做 workspace，后面再加
     try:
@@ -20,7 +23,10 @@ def api_eval(request):
 @login_required
 @require_POST
 def api_plot(request):
-    payload = json.loads(request.body.decode("utf-8"))
+    try:
+        payload = _payload(request)
+    except ValueError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
     func = payload.get("func", "")
     x_min = payload.get("x_min", -5)
     x_max = payload.get("x_max", 5)
@@ -34,7 +40,10 @@ def api_plot(request):
 @login_required
 @require_POST
 def api_run(request):
-    payload = json.loads(request.body.decode("utf-8"))
+    try:
+        payload = _payload(request)
+    except ValueError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
     mode = payload.get("mode", "eval")
 
     try:
@@ -50,3 +59,13 @@ def api_run(request):
         return JsonResponse({"ok": True, "data": out})
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
+def _payload(request):
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeError):
+        raise ValueError("请求必须包含有效的 JSON")
+    if not isinstance(data, dict):
+        raise ValueError("JSON 顶层必须为对象")
+    return data

@@ -166,8 +166,19 @@ class DeepLearningBuilderForm(forms.Form):
             return ""
         try:
             parsed = [int(x.strip()) for x in value.split(",") if x.strip()]
-            if any(x <= 0 for x in parsed):
-                raise forms.ValidationError("隐藏层神经元个数必须为正整数。")
+            if len(parsed) > 6 or any(x <= 0 or x > 2048 for x in parsed):
+                raise forms.ValidationError("最多 6 个隐藏层，每层神经元数为 1~2048。")
         except ValueError:
             raise forms.ValidationError("隐藏层格式错误，请写成 64,32,16 这种形式。")
         return value
+    def clean(self):
+        data = super().clean()
+        if data.get("model_name") == "custom_formula":
+            from .utils.formula import validate_formula
+            try:
+                data["custom_formula"] = validate_formula(data.get("custom_formula"))
+            except ValueError as error:
+                self.add_error("custom_formula", str(error))
+        if data.get("num_samples", 0) * data.get("input_dim", 0) > 5_000_000:
+            self.add_error("num_samples", "样本数与输入维度的乘积不能超过 500 万。")
+        return data

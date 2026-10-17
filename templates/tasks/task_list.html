@@ -3,8 +3,8 @@
 {% load static tz %}
 {% block content %}
   <section class="glass card">
-    <div class="card-title">Tasks</div>
-    <div class="card-subtitle">支持：绝对时刻 / 时间段 + 到点提醒 + 完成/删除双操作</div>
+    <div class="card-title">我的任务清单</div>
+    <div class="card-subtitle">把大计划拆成小行动，按自己的节奏完成。</div>
 
     <div class="row">
       <a class="btn" href="{% url 'tasks:create' %}">+ 新建任务</a>
@@ -97,11 +97,4 @@
     </div>
   </section>
 
-  <!-- toast 容器 -->
-  <div id="toast-root"></div>
-
-  <script>
-    window.REMINDER_ENDPOINT = "{% url 'tasks:reminders_api' %}";
-  </script>
-  <script src="{% static 'js/reminders.js' %}"></script>
 {% endblock %}

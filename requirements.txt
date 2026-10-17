@@ -1,26 +1,20 @@
-# LocalLife 项目依赖清单
-# 使用以下命令安装所有依赖：
-# pip install -r requirements.txt
-
-Django>=4.2,<5.0                # Web框架
-sympy>=1.12                     # 符号计算（数学实验室）
-numpy>=1.24                     # 数值计算（数学实验室）
-matplotlib>=3.7                 # 绘图（数学实验室、2D/3D作图）
-feedparser>=6.0                 # RSS订阅解析（新闻模块）
-requests>=2.31                  # HTTP请求（新闻模块API抓取）
-openai>=1.0                      # 智谱AI SDK（健康分析、卦象解读）
-trafilatura>=1.0                    # 网页内容提取（新闻模块）
-beautifulsoup4>=4.12              # HTML解析（新闻模块）
-lxml>=5.4                       # XML解析（新闻模块）
-pillow>=10.0                    # 图像处理（2D/3D作图）
-cnlunar>=0.2.4                 # 农历转换（节日提醒）
-lunardate>=0.2.0                  # 阴历日期处理（节日提醒）
-python-dateutil>=2.8             # 日期处理（节日提醒）
-
-scikit-learn
-
---index-url https://download.pytorch.org/whl/cu128
-torch==2.8.0
-torchvision==0.23.0
-torchaudio==2.8.0
-
+# Python 3.12 / Windows 10、11；使用默认 PyPI，避免全局 CUDA 索引影响普通依赖。
+Django>=5.2.18,<5.3
+sympy>=1.14,<1.15
+numpy>=1.26,<3
+matplotlib>=3.9,<4
+feedparser>=6,<7
+requests>=2.32,<3
+openai>=1,<4
+trafilatura>=2,<3
+beautifulsoup4>=4.12,<5
+lxml>=5.4,<7
+pillow>=10,<14
+cnlunar>=0.2.4,<0.3
+lunar-python>=1.4.8,<2
+python-dateutil>=2.8,<3
+scikit-learn>=1.5,<2
+waitress>=3.0.2,<4
+python-dotenv>=1,<2
+torch==2.7.1
+torchvision==0.22.1

@@ -16,3 +16,16 @@ db.sqlite3
 media/
 uploads/
 *.log
+.venv*/
+venv/
+.secret_key
+.desktop.lock
+.desktop-instance.json
+build/
+dist/
+backups/
+staticfiles/
+.runtime-*/
+.matplotlib/
+*.sqlite3-wal
+*.sqlite3-shm

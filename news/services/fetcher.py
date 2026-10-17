@@ -1,5 +1,8 @@
 import feedparser
 import trafilatura
+import logging
+from urllib.parse import urlsplit
+from .feed_io import download_feed
 from datetime import datetime, timezone as dt_tz
 
 from django.db import transaction
@@ -29,10 +32,13 @@ def _extract_text(url: str) -> str:
         return ""
 
 
-@transaction.atomic
 def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
-    parsed = feedparser.parse(source.rss_url)
-    if getattr(parsed, "bozo", False):
+    return _save_feed(source, download_feed(source.rss_url), max_entries)
+
+
+def _save_feed(source, content, max_entries=50):
+    parsed = feedparser.parse(content)
+    if getattr(parsed, "bozo", False) and not parsed.entries:
         # 解析失败就跳过
         return 0
 
@@ -42,7 +48,7 @@ def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
         title = (entry.get("title") or "").strip()
         guid = (entry.get("id") or entry.get("guid") or link or title)[:500]
 
-        if not link or not title:
+        if not link or not title or urlsplit(link).scheme not in ("http", "https"):
             continue
 
         published_at = _parse_dt(entry)
@@ -61,19 +67,25 @@ def fetch_source(source: NewsSource, max_entries: int = 50) -> int:
         )
         if created:
             new_count += 1
-            # 只对新条目抓正文（抓不到也无所谓）
-            text = _extract_text(link)
-            if text:
-                obj.content_text = text
-                obj.save(update_fields=["content_text"])
 
     return new_count
 
 
 def fetch_all_sources():
-    sources = NewsSource.objects.filter(is_active=True)
+    sources = list(NewsSource.objects.filter(is_active=True))
+    total = 0
+    successful = 0
+    # 并发下载，串行写 SQLite，避免多个线程在网络等待期间持有写锁。
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(fetch_source, src) for src in sources]
+        futures = {executor.submit(download_feed, src.rss_url): src for src in sources}
         for future in as_completed(futures):
-            # 处理结果（可选）
-            pass
+            source = futures[future]
+            try:
+                content = future.result()
+                total += _save_feed(source, content)
+                successful += 1
+            except Exception:
+                logging.getLogger(__name__).warning("新闻源同步失败：%s", source.name, exc_info=True)
+    if sources and not successful:
+        raise RuntimeError("所有新闻源均无法连接，请检查网络或新闻源设置。")
+    return total

@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% block title %}深度学习 · LocalLife{% endblock %}
+{% load static %}
 {% block content %}
 
 <div class="dl-page">
     <div class="dl-top-panel">
         <div class="panel-header">
-            <h2>DeepLearning 模块</h2>
+            <h2>深度学习实验室</h2>
             <p>上方配置实验参数，下方左侧查看自动生成的 PyTorch 代码，下方右侧实时查看训练曲线。</p>
         </div>
 
@@ -143,7 +145,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 <script>
 const form = document.getElementById("dl-builder-form");
 const codeOutput = document.getElementById("code-output");

@@ -67,20 +67,13 @@
     function startProgress(message) {
         currentProgress = 0;
         progressBar.style.width = '0%';
-        percentText.textContent = '0%';
+        percentText.textContent = '处理中';
         if (loadingMsg) loadingMsg.textContent = message || '请稍候...';
         overlay.style.display = 'flex';
 
-        progressInterval = setInterval(() => {
-            if (currentProgress < 90) {
-                currentProgress += 1;
-                progressBar.style.width = currentProgress + '%';
-                percentText.textContent = currentProgress + '%';
-            } else {
-                clearInterval(progressInterval);
-                progressInterval = null;
-            }
-        }, 1000); // 每秒增长1%，90%后停止
+        progressBar.style.width = '100%';
+        progressBar.style.opacity = '.5';
+
     }
 
     function finishProgress(success = true) {
@@ -90,7 +83,8 @@
         }
         currentProgress = 100;
         progressBar.style.width = '100%';
-        percentText.textContent = '100%';
+        progressBar.style.opacity = '1';
+        percentText.textContent = success ? '已完成' : '未完成';
 
         if (success) {
             setTimeout(() => {
@@ -100,7 +94,7 @@
             setTimeout(() => {
                 overlay.style.display = 'none';
                 progressBar.style.width = '0%';
-                percentText.textContent = '0%';
+                percentText.textContent = '处理中';
             }, 1000);
         }
     }
@@ -122,11 +116,12 @@
                     if (data.success) {
                         finishProgress(true);
                     } else {
-                        alert('操作失败，请稍后重试');
+                        alert(data.error || '操作失败，请稍后重试');
                         finishProgress(false);
                     }
                 } else {
-                    alert('网络错误');
+                    const error = await response.json().catch(() => ({}));
+                    alert(error.error || '网络错误，请稍后重试');
                     finishProgress(false);
                 }
             } catch (err) {

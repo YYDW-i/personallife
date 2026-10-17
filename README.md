@@ -1,187 +1,95 @@
-# LocalLife
+# LocalLife · 本地生活工作台
 
-LocalLife 是一个**本地优先、隐私友好**的个人生活控制台。它将深度学习、任务管理、数学计算、新闻简报、日程规划、卦象分析和健康仪表盘整合在一个精致的毛玻璃界面中，帮助你在不依赖云端服务的情况下高效组织日常生活。
+LocalLife 将任务、日历、健康资料、数学计算、每日简报、易经文化和深度学习实验整合到一个中文个人工作台中。
 
-> ✨ **核心理念**：所有数据默认存储在本地 SQLite 数据库中，你的隐私不会被上传到任何第三方服务器。
+![新版工作台](images/dashboard-v2.jpg)
 
----
+## 双击启动（Windows）
 
-## ✨ 功能亮点
+构建完成的入口：`dist/LocalLife/LocalLife.exe`。
 
-### ✅ 任务管理 (Tasks)
-- 支持三种计划方式：**不设置时间**、**绝对时刻**、**时间段（番茄钟）**
-- 到点提醒（浏览器通知 + 提示音），支持提前自定义分钟数
-- 任务状态：待完成 / 已完成，一键切换
-- 日历视图联动，直观查看每天的任务分布
-  
-#### 任务界面
-![alt text](images/image.png)
-#### 番茄钟
-![alt text](images/image-6.png)
+1. 双击 `LocalLife.exe`。程序自动初始化数据库、启动本地服务并打开浏览器。
+2. 首次使用注册账号；本仓库内启动时可沿用根目录的既有数据库。
+3. 服务运行期间保留启动窗口；关闭窗口或按 Ctrl+C 即停止服务。
+4. 再次双击会打开已有实例。默认端口 8765 被占用时自动选择附近端口。
 
-### 🧮 数学实验室 (Maths)
-- 基于 **SymPy** 的计算引擎，无需编写代码即可：
-  - 表达式求值、化简
-  - 求导（支持多阶）、积分（定/不定）
-  - 解方程（符号解 / 数值解）
-  - 2D / 3D 函数作图（matplotlib 实时渲染）
-- 内置数学键盘，方便输入特殊符号和函数
-- 
-#### 多功能
-![alt text](images/image-7.png)
-#### 以泰勒展开为例
-![alt text](images/image-1.png)
+**移动或分发时请复制整个 `dist/LocalLife` 文件夹。`_internal` 是运行所需依赖，不能只拷贝 EXE。** 发行包内置 Python、后端、页面与 CPU 训练环境，目标电脑无需安装 Python、Node.js 或 CUDA。它是目录式便携程序，不是安装器。
 
-### 📰 新闻简报 (News)
-- 每日使用前可先点击“同步更新新闻”按钮更新新闻
-- 之后可手动筛选自己感兴趣的新闻（比之前大大加快速度）
-- 个性化偏好设置：语言、地区、关键词、新闻主题
-- 生成 2-4 句高密度摘要 + 原文链接，快速掌握要点
-- 
-![alt text](images/image-8.png)
+原项目为 Django 模板应用，前后端由同一服务提供，无需启动两套进程。
 
-### 📅 日历计划 (Planner)
-- 月视图 / 日视图展示任务，支持显示/隐藏已完成任务
-- 每个日期格内可直接点击「+」快速创建当天的任务
-- 未设置时间的任务单独列在下方，不丢失
-- 在日历中还可以看到传统节日！
+## 数据位置与已有数据
 
-![alt text](images/image-2.png)
+- 从本仓库的 `dist/LocalLife` 启动：使用仓库根目录的 `db.sqlite3`、`media/` 和 `.env`。
+- 将发行目录复制到其他可写目录后：使用 EXE 同级的 `userdata/`。
+- 可将旧的 `db.sqlite3`、`media/` 复制到目标数据目录以迁移原有资料，操作前关闭服务并保留备份。
+- 有待执行数据库迁移时，启动器先将数据库备份至数据目录的 `backups/`。
+- 登录密钥位于 `.secret_key`，日志为 `desktop.log`，训练数据位于 `data/`。
+- 删除、移动或覆盖数据前请自行保留副本。源码中的真实数据库、头像、密钥不打入发行包。
 
-### 🔮 卦象分析 (Analytics - I Ching)
-- 传统三币起卦（支持纯随机/时间起卦）
-- 自动匹配本卦、之卦，展示卦辞、爻辞
-- 可选集成智谱 AI，生成白话译文、行动建议及历史典故
-- 纯文化体验与自我反思，不替代专业建议
-- 新添加硬币图像！
+高级启动参数：
 
-![alt text](images/image-3.png)
-
-![alt text](images/image-9.png)
-
-
-### ❤️ 健康仪表盘 (Dashboard)
-- 填写身高、体重、年龄、性别、运动情况、睡眠时长等信息后，自动调用 AI 生成个性化健康分析报告
-- 包括 BMI 计算、风险提示、生活习惯建议
-- 结果缓存，避免重复调用 API
-
-![alt text](images/image-5.png)
-
-###  深度学习 (DeepLearning)
-- 填写模型、数据集、学习效率等参数
-- 自动生成pytorch相应代码
-- 可视化训练
-#### 功能模块
-![alt text](images/image-gong.png)
-#### 训练动画
-![alt text](images/image-train.png)
-#### 生成代码
-![alt text](images/image-code.png)
-
-### ⚙️ 其他特性
-- 完整的用户认证（注册 / 登录 / 退出）
-- 响应式设计，适配桌面和移动端
-- 毛玻璃美学 UI，所有卡片均可交互
-- 所有数据归你所有，无强制云端同步
-
----
-
-## 🛠️ 技术栈
-
-- **后端**：Django 4.x + SQLite（默认，可切换其他数据库）
-- **前端**：原生 HTML/CSS/JavaScript，毛玻璃效果（CSS backdrop-filter）
-- **数学引擎**：SymPy, matplotlib, numpy
-- **AI 集成**：智谱 API（可选，用于健康分析、卦象解读）
-- **新闻抓取**：feedparser（RSS），requests（API）
-
----
-
-## 📦 安装与运行
-
-### 1. 克隆仓库
-```bash
-git clone https://github.com/yourusername/LocalLife.git
-cd LocalLife
+```powershell
+.\dist\LocalLife\LocalLife.exe --data-dir E:\LocalLifeData --port 8765
+.\dist\LocalLife\LocalLife.exe --no-browser
 ```
 
-### 2. 创建并激活虚拟环境
-```bash
-python -m venv venv
-source venv/bin/activate   # Linux/macOS
-venv\Scripts\activate      # Windows
+## 从源码启动
+
+推荐 Python 3.12（64 位）。
+
+```powershell
+python -m venv .venv-desktop
+.\.venv-desktop\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv-desktop\Scripts\python.exe desktop_launcher.py
 ```
 
-### 3. 安装依赖
-```
-pip install -r requirements.txt
-```
+开发调试可设置 `DJANGO_DEBUG=1` 后运行 `python manage.py runserver`。日常使用推荐启动器内置的 Waitress 服务。Django 使用仍受支持的 5.2 LTS 分支。
 
-### 4. 数据库迁移
-```bash
-python manage.py migrate
-```
+## 可选 AI 配置
 
-### 5. 配置环境变量（可选）
-在项目根目录创建 `.env` 文件，或直接在系统中设置以下变量：
-```
-# Django 密钥（生产环境必须修改）
-SECRET_KEY=your-secret-key
+在数据目录建立 `.env`（不提交到 Git）：
 
-# 智谱 AI API（用于健康分析和卦象解读，若不使用可留空）
-OPENAI_API_KEY=your-zhipu-api-key
+```dotenv
+# 可以不设置；未配置时自动生成并保存本机密钥。
+DJANGO_SECRET_KEY=请替换为足够长的随机密钥
+# 可选：智谱 OpenAI 兼容接口密钥
+OPENAI_API_KEY=你的智谱API密钥
 ZAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
-ZAI_MODEL=glm-4
+ZAI_MODEL=glm-4-flash-250414
 ```
 
-> 注意：代码中智谱客户端使用 `OPENAI_API_KEY` 作为变量名，但实际应填入智谱的 API Key。
+重启服务后生效。未配置 AI 时，任务、日历、数学及本地训练均可使用。健康分析需主动点击生成，卦象 AI 解读需主动勾选。**这些操作会把对应健康资料或问题发送到你配置的智谱服务**；新闻同步会访问配置的新闻源。普通浏览健康工作台不触发 AI 网络请求。
 
-### 6. 运行开发服务器
-```bash
-python manage.py runserver
+## 功能说明
+
+- **任务清单**：无时间、绝对时刻、专注时段；支持提醒、编辑、完成和删除。提醒需要服务与浏览器持续运行，声音需用户手势解锁，系统通知需授权。
+- **日历计划**：月视图、日视图、跨天任务、节日及快速新建。
+- **健康资料**：身高、体重、年龄、运动与睡眠；本地计算 BMI，按需生成 AI 生活习惯参考。
+- **数学实验室**：计算、化简、求导、积分、方程、2D/3D 作图、线性代数、极限、泰勒展开与梯度工具。
+- **每日简报**：先同步新闻，再根据主题、语言和关键词生成摘要。启动器会为全新数据库初始化默认新闻源（源码也可执行 `python manage.py seed_news_sources`）；同步依赖网络和源站可用性。
+- **易经文化**：三币起卦、本卦与之卦展示、本地卦辞与可选 AI 解读。
+- **深度学习**：线性模型、MLP、自定义公式，自动生成 PyTorch 代码并绘制训练曲线。发行包使用 CPU；MNIST/FashionMNIST 首次使用需下载数据。Iris、Digits 等与随机数据可本地使用。训练进度保存在当前进程中，停止服务会中止训练。
+
+## 构建 EXE
+
+在 Windows 中运行：
+
+```powershell
+.\.venv-desktop\Scripts\python.exe -m pip install -r requirements-desktop.txt
+.\build_windows.ps1
 ```
 
-访问 http://127.0.0.1:8000 即可开始使用。
+`requirements-lock.txt` 记录本次验证的完整依赖版本。CPU 训练、数学和科学计算库会使发行目录较大，请保持足够磁盘空间。PyInstaller 配置为 `LocalLife.spec`，Windows 中文文件版本为 `2.0.0`。
 
----
+## 验证
 
-## 📖 使用指南
+```powershell
+.\.venv-desktop\Scripts\python.exe manage.py check
+.\.venv-desktop\Scripts\python.exe manage.py test
+# 必须使用没有现存数据库的专用验收目录：
+.\dist\LocalLife\LocalLife.exe --smoke-test --data-dir .runtime-package-check --no-browser
+```
 
-- **首次使用**：注册一个账号，登录后即可访问所有模块。
-- **任务管理**：在「Tasks」中新建任务，设置时间与提醒，完成后点击「完成」。
-- **数学计算**：在「Maths」中选择模式，输入表达式（如 `sin(x)^2+cos(x)^2`），点击运行，结果会以文本或图片形式展示。
-- **新闻简报**：在「News」中先进入「偏好设置」配置你的兴趣，然后点击「刷新今日简报」获取最新摘要。
-- **日历计划**：在「Calendar」中查看月视图，点击日期数字进入日视图，可以查看/编辑当天任务。
-- **卦象分析**：在「Analytics」中填写问题（可选），选择起卦方法，勾选「使用 AI」可获得额外解读。
-- **健康仪表盘**：先去「Settings」填写身高、体重、年龄、性别，返回 Dashboard 即可看到 AI 生成的分析。
-- **深度学习**：在「DeepLearning」中选择并调整相应参数，可以自动生成pytorch代码，点击训练后就会开始训练
+回归测试覆盖权限、任务与提醒、专注模式、日历、表单、数学、新闻、代码生成及真实 CPU 训练；不会改写个人数据库。冻结包自检验证主页面、数学绘图和一轮训练。
 
----
-
-## 🤝 贡献指南
-
-欢迎任何形式的贡献！无论是新功能、Bug 修复、文档改进还是翻译。
-
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
-
-请确保代码风格遵循 PEP8，并在必要时添加测试。
-
----
-
-## 📄 许可证
-
-本项目采用 GPL-3.0 许可证。详见 [LICENSE](LICENSE) 文件。
-
----
-
-## 📬 联系
-
-如有任何问题或建议，请通过 GitHub Issues 与我们联系。
-或者发送到邮箱3438835284@qq.com
-
----
-
-**LocalLife** — 你的本地生活，由你掌控。
+版本变更详见 [中文版本记录](CHANGELOG.md)，测试范围见 [验收记录](VERIFICATION.md)。设计布局参考 [Linear](https://linear.app/features) 与 [Notion](https://www.notion.com/product/projects)。本项目采用 [GPL-3.0](LICENSE)，第三方资源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

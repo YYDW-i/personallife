@@ -1,28 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Dashboard · LocalLife{% endblock %}
-
+{% block title %}总览工作台 · LocalLife{% endblock %}
 {% block content %}
-  <section class="glass card">
-    <div class="card-title">健康状态</div>
-    {% if has_basic %}
-      <div class="card-subtitle">
-        {{ ai_status|default:"检查中..." }}
-      </div>
-    {% else %}
-      <div class="card-subtitle">
-        健康检查暂不可用，请先去 Settings 填写健康基本信息
-      </div>
-    {% endif %}
+<div class="page-heading"><div><div class="eyebrow">YOUR EVERYDAY, REIMAGINED</div><h1>你好，{{ user.username }}<span class="greeting-dot">。</span></h1><p>理清手边的事，为喜欢的生活留一点空间。</p></div><a class="btn primary" href="{% url 'tasks:create' %}">＋ 新建任务</a></div>
+<section class="welcome-banner">
+  <div class="banner-copy"><span class="banner-label"><span class="status-dot"></span> 今天，也按自己的节奏来</span><h2>让每一小步，<br>都有自己的方向。</h2><p>安排计划，照顾自己，也别忘了探索新事物。</p><a href="{% url 'planner:index' %}" class="banner-link">打开我的日历 <span>↗</span></a></div>
+  <div class="orbit-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-core">L<span>·</span></div><div class="orbit-chip chip-check">✓ 有序生活</div><div class="orbit-chip chip-spark">✦ 持续探索</div><span class="orbit-satellite"></span></div>
+</section>
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-icon mint">✓</span><div><span class="stat-label">待办任务</span><strong>{{ todo_tasks }}<small> 项</small></strong><span class="stat-caption">把想法变成下一步</span></div></div>
+  <div class="stat-card"><span class="stat-icon lavender">↗</span><div><span class="stat-label">已完成</span><strong>{{ done_tasks }}<small> 项</small></strong><span class="stat-caption">每一份投入都算数</span></div></div>
+  <div class="stat-card"><span class="stat-icon peach">♡</span><div><span class="stat-label">我的 BMI</span><strong>{{ bmi|default_if_none:"—" }}</strong><a class="stat-caption" href="{% url 'profiles:settings' %}">{% if bmi %}查看健康资料 ↗{% else %}完善资料后计算 ↗{% endif %}</a></div></div>
+  <div class="stat-card"><span class="stat-icon blue">☾</span><div><span class="stat-label">每日睡眠</span><strong>{{ profile.sleep_hours|default_if_none:"—" }}<small> 小时</small></strong><a class="stat-caption" href="{% url 'profiles:settings' %}">记录自己的生活节奏 ↗</a></div></div>
+</div>
+<div class="dashboard-columns">
+  <section class="dashboard-panel"><div class="section-heading"><h2>接下来的计划 <span class="count-tag">{{ todo_tasks }}</span></h2><a href="{% url 'tasks:index' %}">查看全部 ↗</a></div>
+    <div class="preview-tasks">{% for task in upcoming_tasks %}<a class="preview-task" href="{% url 'tasks:update' task.pk %}"><span class="task-checkbox"></span><div><strong>{{ task.title }}</strong><small>{% if task.due_at %}{{ task.due_at|date:"m月d日 H:i" }}{% elif task.window_start %}{{ task.window_start|date:"m月d日 H:i" }} · 专注时段{% else %}随时开始 · 未设置时间{% endif %}</small></div><span class="task-arrow">↗</span></a>{% empty %}<div class="empty-state"><span class="empty-symbol">✓</span><h3>为今天写下第一件事</h3><p>一个清晰的小目标，就是好的开始。</p><a href="{% url 'tasks:create' %}" class="btn">＋ 添加任务</a></div>{% endfor %}</div>
   </section>
-
-  <section class="glass card">
-    <div class="card-title">健康摘要</div>
-    {% if has_basic %}
-      <div class="card-subtitle" style="white-space: pre-wrap;">
-        {{ ai_summary }}
-      </div>
-    {% else %}
-      <div class="card-subtitle">请先去 Settings 填写健康基本信息</div>
-    {% endif %}
-  </section>
+  <section class="dashboard-panel progress-panel"><div class="section-heading"><h2>一点一滴的进展</h2><span class="tiny-label">全部任务</span></div><div class="progress-content"><div class="progress-ring" style="--progress:{{ completion }}%"><div><strong>{{ completion }}<small>%</small></strong><span>完成进度</span></div></div><p>已完成 <b>{{ done_tasks }}</b> / {{ total_tasks }} 项计划</p><span class="muted">{% if total_tasks %}保持节奏，慢慢来就很好。{% else %}从一个小目标开始积累。{% endif %}</span></div></section>
+</div>
+<div class="section-heading tools-heading"><div><div class="eyebrow">A LITTLE ROOM TO EXPLORE</div><h2>打开生活的更多可能</h2></div><span class="tiny-label">你的随身工具箱</span></div>
+<div class="tool-grid"><a class="tool-card" href="{% url 'maths:home' %}"><span class="tool-icon lavender">∑</span><span class="tool-arrow">↗</span><h3>数学实验室</h3><p>从一个公式，探索更大的世界。</p><span class="tool-meta">符号计算 · 函数作图</span></a><a class="tool-card" href="{% url 'deeplearning:builder' %}"><span class="tool-icon mint">⌘</span><span class="tool-arrow">↗</span><h3>深度学习</h3><p>让灵感变成可以运行的实验。</p><span class="tool-meta">模型搭建 · 可视化训练</span></a><a class="tool-card" href="{% url 'news:index' %}"><span class="tool-icon peach">▤</span><span class="tool-arrow">↗</span><h3>每日简报</h3><p>用更少的时间，读懂关心的事。</p><span class="tool-meta">兴趣订阅 · 精选摘要</span></a><a class="tool-card" href="{% url 'analytics_app:iching_index' %}"><span class="tool-icon blue">☷</span><span class="tool-arrow">↗</span><h3>易经文化</h3><p>换一个视角，留片刻给思考。</p><span class="tool-meta">传统文化 · 自我反思</span></a></div>
+<section class="dashboard-panel health-panel"><div class="section-heading"><h2>照顾好自己，也是计划的一部分</h2><a href="{% url 'profiles:settings' %}">编辑健康资料 ↗</a></div>{% if has_basic %}<div class="health-content"><div><span class="pill">健康资料已完善</span><p>{{ ai_status|default:"日常记录已就绪。你可以按需生成一份 AI 生活习惯参考。" }}</p>{% if ai_summary %}<div class="health-summary">{{ ai_summary|linebreaksbr }}</div>{% endif %}</div><form method="post">{% csrf_token %}<button class="btn" type="submit">{% if ai_summary %}重新生成分析{% else %}生成 AI 分析{% endif %}</button><small>点击后将健康资料发送至你配置的智谱 AI 服务{% if not ai_enabled %}；请先配置 API 密钥{% endif %}。</small></form></div>{% else %}<div class="health-content"><p>记录身高、体重与睡眠，让生活习惯更清晰。</p><a class="btn" href="{% url 'profiles:settings' %}">完善我的资料 ↗</a></div>{% endif %}</section>
 {% endblock %}

@@ -9,7 +9,7 @@ from .forms import RegisterForm
 
 def register(request):
     if request.user.is_authenticated:
-        logout(request)  # 清掉原账号登录态（这样你就能注册新账号了）
+        return redirect("core:dashboard")
 
     form = RegisterForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

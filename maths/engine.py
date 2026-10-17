@@ -7,7 +7,7 @@ import sympy as sp
 import ast
 
 from sympy.parsing.sympy_parser import (
-    parse_expr, standard_transformations, implicit_multiplication_application
+    parse_expr, stringify_expr, standard_transformations, implicit_multiplication_application
 )
 
 # 允许的符号/函数（你可以逐步扩充）
@@ -16,24 +16,56 @@ ALLOWED = {
     "sin": sp.sin, "cos": sp.cos, "tan": sp.tan,
     "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,
     "log": lambda x, base=10: sp.log(x, base), "ln": sp.log, "exp": sp.exp,
-    "sqrt": sp.sqrt, "Abs": sp.Abs,
+    "sqrt": sp.sqrt, "Abs": sp.Abs, "abs": sp.Abs, "oo": sp.oo,
 }
 
 TRANSFORMS = standard_transformations + (implicit_multiplication_application,)
 FORBIDDEN = re.compile(r"(__|import|exec|eval|lambda|open|os\.|sys\.|subprocess|pickle)", re.I)
 
 def safe_parse(expr_str: str, extra_locals: dict | None = None) -> sp.Expr:
-    if not expr_str or len(expr_str) > 800:
+    if not isinstance(expr_str, str) or not expr_str or len(expr_str) > 800:
         raise ValueError("表达式为空或过长")
     if FORBIDDEN.search(expr_str):
         raise ValueError("表达式包含不允许的内容")
+    if not re.fullmatch(r"[a-zA-Z0-9_+*/^().,\s-]+", expr_str):
+        raise ValueError("表达式只能包含数学符号、变量和函数")
 
     local_dict = dict(ALLOWED)
     if extra_locals:
         local_dict.update(extra_locals)
 
     expr_str = expr_str.replace("^", "**")
-    return parse_expr(expr_str, local_dict=local_dict, transformations=TRANSFORMS, evaluate=True)
+    # SymPy 的 parse_expr 内部使用 eval，必须先验证转换后的 AST 并限制全局名称。
+    global_dict = {"__builtins__": {}, "Symbol": sp.Symbol, "Integer": sp.Integer,
+                   "Float": sp.Float, "Rational": sp.Rational,
+                   "Add": sp.Add, "Mul": sp.Mul, "Pow": sp.Pow}
+    code = stringify_expr(expr_str, local_dict, global_dict, TRANSFORMS)
+    tree = ast.parse(code, mode="eval")
+    allowed_nodes = (ast.Expression, ast.BinOp, ast.UnaryOp, ast.Add, ast.Sub,
+                     ast.Mult, ast.Div, ast.Pow, ast.Mod, ast.UAdd, ast.USub,
+                     ast.Name, ast.Load, ast.Call, ast.Constant)
+    nodes = list(ast.walk(tree))
+    if len(nodes) > 300:
+        raise ValueError("表达式过于复杂")
+    for node in nodes:
+        if not isinstance(node, allowed_nodes):
+            raise ValueError("表达式包含不支持的语法")
+        if isinstance(node, ast.Name) and (node.id.startswith("_") or node.id not in {**global_dict, **local_dict}):
+            raise ValueError("表达式包含未知名称")
+        if isinstance(node, ast.Call) and (not isinstance(node.func, ast.Name)
+                or not callable(local_dict.get(node.func.id, global_dict.get(node.func.id)))):
+            raise ValueError("只能调用允许的数学函数")
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Pow):
+            if any(isinstance(child, ast.Pow) for child in ast.walk(node.right)):
+                raise ValueError("不支持嵌套指数")
+    result = parse_expr(expr_str, local_dict=local_dict, global_dict=global_dict,
+                        transformations=TRANSFORMS, evaluate=False)
+    if not isinstance(result, sp.Expr):
+        raise ValueError("请输入数学表达式")
+    for power in result.atoms(sp.Pow):
+        if power.exp.is_number and (not power.exp.is_real or abs(power.exp) > 1000):
+            raise ValueError("指数范围过大")
+    return result.doit()
 
 def _sym(var_name: str) -> sp.Symbol:
     if not var_name or len(var_name) > 8:
@@ -112,6 +144,8 @@ def integrate_expr(expr_str: str, var_name="x", a=None, b=None, workspace: dict 
     expr = safe_parse(expr_str, local_ws)
 
     # 有上下限 -> 定积分；否则不定积分
+    if bool(a is not None and str(a).strip()) != bool(b is not None and str(b).strip()):
+        raise ValueError("定积分必须同时填写上下限")
     if a is not None and b is not None and str(a).strip() != "" and str(b).strip() != "":
         a_expr = safe_parse(str(a), local_ws)
         b_expr = safe_parse(str(b), local_ws)
@@ -180,17 +214,17 @@ def plot_2d(func_str: str, var_name="x", x_min=-5, x_max=5, n=400, workspace: di
 
     x_min = float(x_min)
     x_max = float(x_max)
+    if not np.isfinite([x_min, x_max]).all() or x_min >= x_max:
+        raise ValueError("横坐标下限必须小于上限，且必须为有限数值")
     n = int(n)
     if n < 50 or n > 5000:
         raise ValueError("点数建议 50~5000")
 
     xs = np.linspace(x_min, x_max, n)
-    ys = f(xs)
-    
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         ys = f(xs)
 
-    ys = np.array(ys, dtype=float)
+    ys = np.broadcast_to(np.asarray(ys, dtype=float), xs.shape).copy()
 
     # ✅ 1) 非有限值断开
     ys[~np.isfinite(ys)] = np.nan
@@ -237,6 +271,8 @@ def plot_3d(func_str: str,
     workspace = workspace or {}
     x = _sym(x_name)
     y = _sym(y_name)
+    if x_name == y_name:
+        raise ValueError("3D 作图的两个变量必须不同")
 
     local_ws = dict(workspace)
     local_ws[x_name] = x
@@ -248,6 +284,8 @@ def plot_3d(func_str: str,
     x_min = float(x_min); x_max = float(x_max)
     y_min = float(y_min); y_max = float(y_max)
     n = int(n)
+    if not np.isfinite([x_min, x_max, y_min, y_max]).all() or x_min >= x_max or y_min >= y_max:
+        raise ValueError("坐标上下限必须递增且为有限数值")
     if n < 20 or n > 250:
         raise ValueError("3D 网格点数 n 建议 20~250（太大很卡）")
 
@@ -258,7 +296,7 @@ def plot_3d(func_str: str,
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         Z = f(X, Y)
 
-    Z = np.array(Z, dtype=float)
+    Z = np.broadcast_to(np.asarray(Z, dtype=float), X.shape).copy()
 
     # 1) 非有限值断开（不连续/除零）
     Z[~np.isfinite(Z)] = np.nan
@@ -366,6 +404,8 @@ def run(mode: str, payload: dict, workspace: dict | None = None):
 
 def _parse_matrix(mat_str, name="矩阵"):
     """将字符串解析为嵌套列表，支持更灵活的输入格式，并给出明确错误"""
+    if not isinstance(mat_str, str) or len(mat_str) > 20000:
+        raise ValueError(f"{name} 必须为文本，且长度不能超过 20000")
     s = mat_str.strip()
     if not s:
         raise ValueError(f"{name} 输入为空")
@@ -393,9 +433,15 @@ def _parse_matrix(mat_str, name="矩阵"):
     # 确保结果是二维列表
     if isinstance(mat, list):
         if all(isinstance(row, list) for row in mat):
+            if not mat or not mat[0] or len(mat) > 50 or len(mat[0]) > 50 or any(len(row) != len(mat[0]) for row in mat):
+                raise ValueError("矩阵必须为非空规则矩阵，最多 50 × 50")
+            if any(type(value) not in (int, float) or not np.isfinite(value) for row in mat for value in row):
+                raise ValueError("矩阵元素必须为有限数字")
             return mat
         elif all(isinstance(item, (int, float)) for item in mat):
             # 如果是一维列表，作为行向量返回（即转为二维：[[...]]）
+            if not mat or len(mat) > 50 or not np.isfinite(mat).all():
+                raise ValueError("向量必须非空、有限，且最多 50 个元素")
             return [mat]
         else:
             raise ValueError(f"{name} 应包含数字，或为二维列表")
@@ -490,7 +536,11 @@ def limit_expr(expr_str: str, var_name="x", approach="0", direction="+-", worksp
     elif direction == "-":
         limit = sp.limit(expr, var, approach_val, dir="-")
     else:
-        limit = sp.limit(expr, var, approach_val)
+        left = sp.limit(expr, var, approach_val, dir="-")
+        right = sp.limit(expr, var, approach_val, dir="+")
+        if left != right:
+            raise ValueError("左右极限不同，双侧极限不存在")
+        limit = right
     return {
         "kind": "text",
         "expr_latex": sp.latex(expr),
@@ -509,8 +559,8 @@ def series_expr(expr_str: str, var_name="x", point="0", order=6, workspace: dict
     # 确保 order 是正整数
     try:
         order = int(order)
-        if order <= 0:
-            raise ValueError("展开阶数必须为正整数")
+        if not 1 <= order <= 30:
+            raise ValueError("展开阶数必须为 1 到 30")
     except ValueError:
         raise ValueError("展开阶数必须为整数")
 
@@ -650,9 +700,12 @@ def gradient_descent_demo(func_str: str, vars_str: str, x0_str: str, lr: float =
     :param steps: 迭代步数
     :return: 包含图像 base64 的字典
     """
+    if not 1 <= steps <= 1000 or not np.isfinite(lr) or not 0 < lr <= 10:
+        raise ValueError("步数范围为 1~1000，学习率范围为 (0, 10]")
+    import matplotlib
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib import cm
-    import numpy as np
 
     # 解析变量和初始点
     var_names = [v.strip() for v in vars_str.split(',') if v.strip()]
@@ -683,6 +736,8 @@ def gradient_descent_demo(func_str: str, vars_str: str, x0_str: str, lr: float =
         gy = grad_y(x, y)
         new_x = x - lr * gx
         new_y = y - lr * gy
+        if not np.isfinite([new_x, new_y]).all() or max(abs(new_x), abs(new_y)) > 1e8:
+            raise ValueError("迭代发散，请减小学习率")
         points.append(np.array([new_x, new_y]))
     points = np.array(points)
 
@@ -691,7 +746,7 @@ def gradient_descent_demo(func_str: str, vars_str: str, x0_str: str, lr: float =
     y_min, y_max = min(points[:,1].min(), -2), max(points[:,1].max(), 2)
     X, Y = np.meshgrid(np.linspace(x_min, x_max, 100),
                        np.linspace(y_min, y_max, 100))
-    Z = f(X, Y)
+    Z = np.broadcast_to(np.asarray(f(X, Y), dtype=float), X.shape)
 
     fig, ax = plt.subplots(figsize=(8,6))
     contour = ax.contour(X, Y, Z, levels=20, cmap=cm.viridis)

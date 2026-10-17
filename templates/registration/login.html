@@ -3,12 +3,13 @@
 
 {% block content %}
   <section class="glass card">
-    <div class="card-title">登录</div>
+    <div class="eyebrow">WELCOME BACK</div><div class="card-title">欢迎回到你的空间。</div>
     没有账号？<a href="{% url 'accounts:register' %}">注册</a>
 
     <form method="post" class="form">
       {% csrf_token %}
       {{ form.as_p }}
+      <input type="hidden" name="next" value="{{ next }}">
       <button class="btn" type="submit">登录</button>
     </form>
   </section>

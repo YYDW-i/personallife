@@ -13,17 +13,21 @@ from django.views.decorators.csrf import csrf_exempt
 @login_required
 @require_http_methods(["GET"])
 def index(request):
-    return render(request, "analytics_app/index.html")
+    return redirect("analytics_app:iching_index")
 
+@login_required
 @require_http_methods(["GET"])
 def iching_index(request):
     return render(request, "analytics_app/iching/index.html")
 
 
+@login_required
 @require_http_methods(["POST"])
 def iching_cast(request):
     question = (request.POST.get("question") or "").strip()
     method = request.POST.get("method") or "coins"
+    if method not in ("coins", "random", "time"):
+        return JsonResponse({"error": "不支持的起卦方式"}, status=400)
     use_ai = request.POST.get("use_ai") == "1"
     
     try:
@@ -74,10 +78,13 @@ def iching_cast(request):
     }
     return render(request, "analytics_app/iching/result.html", ctx)
 
+@login_required
 @require_http_methods(["POST"])
 def iching_cast_ajax(request):
     question = (request.POST.get("question") or "").strip()
     method = request.POST.get("method") or "coins"
+    if method not in ("coins", "random", "time"):
+        return JsonResponse({"error": "不支持的起卦方式"}, status=400)
     use_ai = request.POST.get("use_ai") == "1"
 
     try:

@@ -1,7 +1,10 @@
 # planner/holidays.py
 import datetime
 import cnlunar  # pip install cnlunar
-from lunar_python import Solar
+try:
+    from lunar_python import Solar
+except ImportError:
+    Solar = None
 
 # ----- 公历节日（固定日期） -----
 SOLAR_HOLIDAYS = {
@@ -81,7 +84,7 @@ def get_floating_events(d: datetime.date) -> list:
         # 没有安装 dateutil，忽略复活节
         pass
 
-    return events
+    return list(dict.fromkeys(events))
 
 def get_day_events(d: datetime.date) -> list:
     """返回给定日期的事件列表（节日/节气）"""

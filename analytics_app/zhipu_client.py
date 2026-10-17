@@ -5,7 +5,7 @@ import os
 import urllib.request
 from typing import Any, Dict, Optional
 from openai import OpenAI
-from config import settings
+from django.conf import settings
 from urllib.error import HTTPError, URLError
 
 ZHIPU_API_KEY = settings.OPENAI_API_KEY  # 从环境变量读取智谱 API Key :contentReference[oaicite:3]{index=3}
@@ -58,7 +58,7 @@ def zhipu_interpret_optional(
     
     if not ZHIPU_API_KEY:
         return {
-            "error": "未配置 ZHIPU_API_KEY（环境变量）。已跳过 AI 解读。",
+            "error": "未配置 OPENAI_API_KEY（环境变量）。已跳过 AI 解读。",
         }
     # 提取本卦卦辞和爻辞
     primary_scripture = primary.get("scripture", "")
@@ -131,7 +131,7 @@ def zhipu_interpret_optional(
     }
 
     payload = {
-        "model": os.getenv("ZHIPU_MODEL", "glm-4"),   # 用支持结构化输出的模型
+        "model": ZHIPU_MODEL,
         "messages": [
             {"role": "system", "content": sys},
             {"role": "user", "content": json.dumps(user, ensure_ascii=False)},

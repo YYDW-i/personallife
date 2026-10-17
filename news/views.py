@@ -38,7 +38,13 @@ def preferences(request):
 @login_required
 def refresh_today(request):
     if request.method == "POST":
-        new_count = fetch_all_sources()
+        try:
+            new_count = fetch_all_sources()
+        except RuntimeError as exc:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({"success": False, "error": str(exc)}, status=502)
+            messages.error(request, str(exc))
+            return redirect("news:index")
         build_brief_for_user(request.user, date=timezone.localdate())
         # 判断是否为 AJAX 请求（通过请求头 X-Requested-With）
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -51,7 +57,13 @@ def sync_news(request):
     """只执行抓取新闻源，不生成简报"""
     if request.method == "POST":
         # 执行抓取（耗时操作）
-        new_count = fetch_all_sources()
+        try:
+            new_count = fetch_all_sources()
+        except RuntimeError as exc:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({"success": False, "error": str(exc)}, status=502)
+            messages.error(request, str(exc))
+            return redirect("news:index")
         # 判断是否为 AJAX 请求
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({"success": True, "new_count": new_count})

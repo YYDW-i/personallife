@@ -1,0 +1,13 @@
+VSVersionInfo(
+  ffi=FixedFileInfo(filevers=(2,0,0,0), prodvers=(2,0,0,0), mask=0x3f, flags=0,
+                   OS=0x40004, fileType=0x1, subtype=0x0, date=(0,0)),
+  kids=[StringFileInfo([StringTable('080404b0', [
+    StringStruct('CompanyName', 'LocalLife'),
+    StringStruct('FileDescription', 'LocalLife 个人生活工作台一键启动器'),
+    StringStruct('FileVersion', '2.0.0'),
+    StringStruct('InternalName', 'LocalLife'),
+    StringStruct('OriginalFilename', 'LocalLife.exe'),
+    StringStruct('ProductName', 'LocalLife 本地生活工作台'),
+    StringStruct('ProductVersion', '2.0.0')
+  ])]), VarFileInfo([VarStruct('Translation', [2052, 1200])])]
+)

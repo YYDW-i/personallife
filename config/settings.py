@@ -13,11 +13,21 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 # settings.py
 import os
+from django.core.management.utils import get_random_secret_key
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = Path(os.getenv("LOCALLIFE_DATA_DIR", BASE_DIR)).resolve()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(DATA_DIR / ".matplotlib"))
+load_dotenv(DATA_DIR / ".env")
+if DATA_DIR != BASE_DIR:
+    load_dotenv(BASE_DIR / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
-ZAI_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/"  # 智谱 OpenAI 兼容 base_url :contentReference[oaicite:5]{index=5}
-ZAI_MODEL = "glm-4-flash-250414"  # 免费 Flash（也可换 glm-4.5-flash 等） :contentReference[oaicite:6]{index=6}
+ZAI_BASE_URL = os.getenv("ZAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4").rstrip("/")
+ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4-flash-250414")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,12 +37,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    key_path = DATA_DIR / ".secret_key"
+    try:
+        with key_path.open("x", encoding="utf-8") as key_file:
+            key_file.write(get_random_secret_key())
+    except FileExistsError:
+        pass
+    SECRET_KEY = key_path.read_text(encoding="utf-8").strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "0").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,[::1],testserver").split(",") if h.strip()]
 
 
 # Application definition
@@ -94,7 +112,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATA_DIR / 'db.sqlite3',
+        'OPTIONS': {'timeout': 30},
     }
 }
 
@@ -121,7 +140,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'Asia/Shanghai'
 
@@ -136,8 +155,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = DATA_DIR / "staticfiles"
 
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
@@ -155,4 +175,6 @@ NEWS_SUMMARY_BACKEND = "fallback"
 NEWS_SUMMARY_CALLABLE = "profiles.zhipu_client.get_news_brief"
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = DATA_DIR / 'media'
+DATASET_ROOT = DATA_DIR / 'data'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

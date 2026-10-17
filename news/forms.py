@@ -3,6 +3,7 @@ from news.models import UserNewsPreference, Topic
 
 
 class NewsPreferenceForm(forms.ModelForm):
+    max_items = forms.IntegerField(label="每日条数", min_value=1, max_value=50)
     topics = forms.ModelMultipleChoiceField(
         queryset=Topic.objects.all(),
         required=False,

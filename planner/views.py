@@ -5,6 +5,7 @@ from datetime import datetime, date, timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import render
+from django.http import Http404
 from django.utils import timezone
 
 from tasks.models import Task
@@ -37,8 +38,10 @@ def _prev_next_month(year: int, month: int):
 @login_required
 def calendar_month(request, year=None, month=None):
     now = timezone.localtime()
-    year = int(year) if year else now.year
-    month = int(month) if month else now.month
+    year = int(year) if year is not None else now.year
+    month = int(month) if month is not None else now.month
+    if not (2 <= year <= 9998 and 1 <= month <= 12):
+        raise Http404("日期无效")
 
     month_start, month_end = _month_range(year, month)
     show_done = request.GET.get("show_done") == "1"
@@ -53,7 +56,7 @@ def calendar_month(request, year=None, month=None):
         | Q(
             schedule_kind=Task.ScheduleKind.WINDOW,
             window_start__lt=month_end,
-            window_end__gte=month_start,
+            window_end__gt=month_start,
         )
     ).select_related("user")
 
@@ -68,8 +71,15 @@ def calendar_month(request, year=None, month=None):
             time_key = timezone.localtime(t.window_start).time()
         else:
             continue
-        k = d.isoformat()
-        by_day[k].append((time_key, t))
+        if t.schedule_kind == Task.ScheduleKind.WINDOW:
+            first = max(d, month_start.date())
+            last = min(timezone.localtime(t.window_end - timedelta(microseconds=1)).date(),
+                       month_end.date() - timedelta(days=1))
+            while first <= last:
+                by_day[first.isoformat()].append((time_key, t))
+                first += timedelta(days=1)
+        else:
+            by_day[d.isoformat()].append((time_key, t))
 
     # 每天内部按时间排序
     day_tasks = {}
@@ -115,7 +125,12 @@ def calendar_month(request, year=None, month=None):
 
 @login_required
 def calendar_day(request, year: int, month: int, day: int):
-    target = date(year, month, day)
+    try:
+        target = date(year, month, day)
+        if not 2 <= year <= 9998:
+            raise ValueError
+    except ValueError:
+        raise Http404("日期无效")
     tz = timezone.get_current_timezone()
     start = timezone.make_aware(datetime(year, month, day, 0, 0, 0), tz)
     end = start + timedelta(days=1)
@@ -127,7 +142,7 @@ def calendar_day(request, year: int, month: int, day: int):
 
     qs = base_qs.filter(
         Q(schedule_kind=Task.ScheduleKind.AT, due_at__gte=start, due_at__lt=end)
-        | Q(schedule_kind=Task.ScheduleKind.WINDOW, window_start__lt=end, window_end__gte=start)
+        | Q(schedule_kind=Task.ScheduleKind.WINDOW, window_start__lt=end, window_end__gt=start)
     ).order_by("due_at", "window_start", "-created_at")
 
     return render(request, "planner/calendar_day.html", {

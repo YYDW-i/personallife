@@ -4,6 +4,7 @@ import time
 import traceback
 import uuid
 import ast
+from django.conf import settings
 
 import numpy as np
 import torch
@@ -33,12 +34,13 @@ DATASET_TASK_MAP = {
 }
 
 
-def start_training_job(config: dict) -> str:
+def start_training_job(config: dict, user_id=None) -> str:
     job_id = uuid.uuid4().hex
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     job_data = {
         "job_id": job_id,
+        "user_id": user_id,
         "status": "queued",
         "message": "训练任务已创建，等待启动。",
         "current_epoch": 0,
@@ -55,6 +57,11 @@ def start_training_job(config: dict) -> str:
     }
 
     with TRAINING_LOCK:
+        if sum(job["status"] in ("queued", "running") for job in TRAINING_JOBS.values()) >= 2:
+            raise RuntimeError("已有两个训练任务，请等待完成后再启动。")
+        completed = [key for key, job in TRAINING_JOBS.items() if job["status"] not in ("queued", "running")]
+        for key in completed[:-30]:
+            del TRAINING_JOBS[key]
         TRAINING_JOBS[job_id] = job_data
 
     thread = threading.Thread(
@@ -66,10 +73,10 @@ def start_training_job(config: dict) -> str:
     return job_id
 
 
-def get_training_job(job_id: str):
+def get_training_job(job_id: str, user_id=None):
     with TRAINING_LOCK:
         job = TRAINING_JOBS.get(job_id)
-        return copy.deepcopy(job) if job else None
+        return copy.deepcopy(job) if job and job.get("user_id") == user_id else None
 
 
 def _update_job(job_id: str, **kwargs):
@@ -141,7 +148,8 @@ _ALLOWED_AST_NODES = (
 
 
 def _compile_formula(formula_text: str):
-    expr = (formula_text or "x @ w + b").strip()
+    from .formula import validate_formula
+    expr = validate_formula(formula_text)
 
     if "=" in expr:
         left, right = expr.split("=", 1)
@@ -291,7 +299,7 @@ def _build_tabular_loaders(X, y, config, task_type):
             y_np,
             test_size=test_size,
             random_state=seed,
-            stratify=y_np,
+            stratify=y_np if np.unique(y_np, return_counts=True)[1].min() >= 2 and int(len(y_np) * test_size) >= len(np.unique(y_np)) else None,
         )
 
     X_train = torch.tensor(X_train, dtype=torch.float32)
@@ -392,11 +400,11 @@ def _load_dataset(config):
         transform = transforms.ToTensor()
 
         if dataset_name == "mnist":
-            train_dataset = datasets.MNIST(root="data", train=True, download=True, transform=transform)
-            test_dataset = datasets.MNIST(root="data", train=False, download=True, transform=transform)
+            train_dataset = datasets.MNIST(root=str(settings.DATASET_ROOT), train=True, download=True, transform=transform)
+            test_dataset = datasets.MNIST(root=str(settings.DATASET_ROOT), train=False, download=True, transform=transform)
         else:
-            train_dataset = datasets.FashionMNIST(root="data", train=True, download=True, transform=transform)
-            test_dataset = datasets.FashionMNIST(root="data", train=False, download=True, transform=transform)
+            train_dataset = datasets.FashionMNIST(root=str(settings.DATASET_ROOT), train=True, download=True, transform=transform)
+            test_dataset = datasets.FashionMNIST(root=str(settings.DATASET_ROOT), train=False, download=True, transform=transform)
 
         batch_size = int(config["batch_size"])
         train_loader = DataLoader(
@@ -482,6 +490,8 @@ def _run_training_job(job_id: str, config: dict):
                 optimizer.zero_grad()
                 pred = model(xb)
                 loss = criterion(pred, yb)
+                if not torch.isfinite(loss):
+                    raise RuntimeError("训练损失出现非有限值，请减小学习率或调整公式。")
                 loss.backward()
                 optimizer.step()
 
